@@ -1,5 +1,5 @@
 import typer
-from providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import ClaudeBedrockProvider
 
 def run():
     typer.echo("[🔍] Checking LLM provider connection...")

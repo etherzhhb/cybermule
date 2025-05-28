@@ -1,5 +1,6 @@
+import importlib
 import typer
-from commands import generate, review_commit, history, show_log, filter
+from cybermule.commands import generate, review_commit, history, show_log, filter
 
 app = typer.Typer()
 

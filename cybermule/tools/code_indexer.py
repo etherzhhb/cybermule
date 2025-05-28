@@ -1,8 +1,7 @@
-import os
 import faiss
 import numpy as np
 import ast
-from providers.embedding_provider import SentenceTransformerProvider
+from cybermule.providers.embedding_provider import SentenceTransformerProvider
 
 class CodeIndexer:
     def __init__(self):

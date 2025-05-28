@@ -1,5 +1,5 @@
 import typer
-from providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import ClaudeBedrockProvider
 from tools.config_loader import get_prompt_path
 from tools import git_utils
 from tools.memory_graph import MemoryGraph

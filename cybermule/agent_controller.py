@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 from datetime import datetime
-from providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import ClaudeBedrockProvider
 from tools import code_generator, test_runner, code_indexer, git_inspector
 
 def log_session(data, mode):
@@ -13,7 +13,7 @@ def log_session(data, mode):
     print(f"Session logged to {filename}")
 
 def list_session_logs():
-    logs = [f for f in os.listdir(".") if f.startswith("session_") and f.endswith(".json")]
+    logs = [f for f in os.listdir("..") if f.startswith("session_") and f.endswith(".json")]
     if not logs:
         print("No session logs found.")
     else:
@@ -30,7 +30,7 @@ def show_session_log(filename):
         print(json.dumps(data, indent=2))
 
 def filter_session_logs(keyword=None, mode=None, date=None):
-    logs = [f for f in os.listdir(".") if f.startswith("session_") and f.endswith(".json")]
+    logs = [f for f in os.listdir("..") if f.startswith("session_") and f.endswith(".json")]
     found = False
     for log in sorted(logs):
         try:

@@ -2,7 +2,7 @@ import json
 import typer
 from pathlib import Path
 from langchain.prompts import PromptTemplate
-from providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import ClaudeBedrockProvider
 from tools.config_loader import get_prompt_path
 
 def run(file: str, debug_prompt: bool = typer.Option(False, help="Print rendered prompt before sending to LLM")):

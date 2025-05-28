@@ -1,6 +1,6 @@
 import typer
 from tools.memory_graph import MemoryGraph
-from providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import ClaudeBedrockProvider
 from tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 from executors import run_tests, fix_errors

@@ -26,15 +26,14 @@ A command-line AI assistant for coding tasks like:
 
 ## 🚀 CLI Commands
 
-| `check-llm` | Test connection to the configured LLM provider |
 | Command                | Description                                 |
 |------------------------|---------------------------------------------|
+| `check-llm` | Test connection to the configured LLM provider |
 | `generate`             | Generate code for a given task              |
 | `review-commit`        | Analyze latest Git commit                   |
 | `history`              | Show memory of past tasks and retries       |
 | `describe-node <id>`   | Show full prompt/response for a node        |
 | `retry <id>`           | Retry a failed attempt using fix prompt     |
-
 | `analyze-coverage --file X.py` | Suggest tests for uncovered lines in a file     |
 | `plan "task desc"`         | Generate a step-by-step plan for a coding task |
 | `smart-thread "task" --file X.py` | Full agent workflow: code, test, fix, suggest |
@@ -86,41 +85,35 @@ Make sure AWS credentials are set.
 ## 📂 Project Structure
 
 ```
-cli/
-  main.py                # Typer app entry
-  config.yaml            # Config for provider and prompts
-commands/
-  generate.py            # Main generation command
-  review_commit.py       # Git commit review
-  retry.py               # Retry a failed node
-  history.py             # View past sessions
-  describe_node.py       # Show prompt/response for a node
-providers/
-  llm_provider.py        # Claude via AWS Bedrock
-tools/
-  memory_graph.py        # Persistent DAG for retries
-  test_runner.py         # Runs pytest
-  config_loader.py       # Loads config and prompt paths
-prompts/
-  generate_code.j2       # Prompt for initial code
-  fix_code_error.j2      # Prompt for retry after failure
+cybermule/
+  cli/                  # Typer CLI entrypoint
+  commands/             # Subcommand handlers
+  providers/            # LLM backends (Claude, OpenAI, etc.)
+  tools/                # Test runner, config loader, etc.
+  prompts/              # Jinja2 prompt templates
+  executors/            # Modular agent execution steps
+  memory/               # DAG memory system
+tests/                  # Unit and integration tests
+README.md
+config.yaml
 ```
 
 ---
 
 ## ⚙️ Modular Executors
 
-The `executors/` module contains reusable components for running agent steps:
+The `cybermule/executors/` module contains reusable components for agent workflows.
 
-| Executor File         | Purpose                                      |
-|-----------------------|----------------------------------------------|
-- A step-to-executor classifier (`classify_step.j2`) maps plan steps to the correct executor using LLM reasoning.
-| `run_codegen.py`      | Generates code based on task description     |
-| `run_tests.py`        | Executes `pytest` and captures test output   |
-| `fix_errors.py`       | Uses test feedback to regenerate fixed code  |
-| `suggest_tests.py`    | Suggests additional test cases for uncovered lines |
+| Executor File         | Purpose                                                |
+|-----------------------|--------------------------------------------------------|
+| `run_codegen.py`      | Generates code based on task description               |
+| `run_tests.py`        | Executes tests using `pytest` and captures output      |
+| `fix_errors.py`       | Uses test failure feedback to regenerate fixed code    |
+| `suggest_tests.py`    | Suggests new test cases for uncovered functions/lines  |
 
-These are used in `smart-thread` and can be composed for more complex agents.
+🧠 A separate prompt (`classify_step.j2`) uses LLM reasoning to dynamically choose which executor to run based on the plan step.
+
+These executors are used by the `smart-thread` and `planner-loop` agents and can be composed into more complex workflows.
 
 ## 🧪 Example
 
@@ -158,6 +151,6 @@ cybermule retry <node_id>
 - [x] Core generate + retry CLI
 - [x] Memory graph for retries
 - [ ] GitHub PR integration (deferred)
-- [ ] Multi-step planning workflows
-- [ ] Test coverage introspection
+- [x] Multi-step planning workflows
+- [x] Test coverage introspection
 - [ ] Optional TUI or web UI
