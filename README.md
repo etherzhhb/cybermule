@@ -1,5 +1,11 @@
 [![CI](https://github.com/your-username/cybermule/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/cybermule/actions)
 
+# 🤖 Cybermule
+
+An autonomous AI coding agent that can generate, test, and refine code using Bedrock Claude or OpenAI. Supports a modular executor system and planner-agent loop.
+
+📄 For technical design details, see [design.md](design.md).
+
 # 🧠 AI Code Agent (CLI)
 
 A command-line AI assistant for coding tasks like:
