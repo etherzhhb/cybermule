@@ -1,8 +1,8 @@
 import typer
 from cybermule.providers.llm_provider import ClaudeBedrockProvider
-from tools.config_loader import get_prompt_path
-from tools import git_utils
-from tools.memory_graph import MemoryGraph
+from cybermule.tools.config_loader import get_prompt_path
+from cybermule.tools import git_utils
+from cybermule.tools.memory_graph import MemoryGraph
 from langchain.prompts import PromptTemplate
 from pathlib import Path
 

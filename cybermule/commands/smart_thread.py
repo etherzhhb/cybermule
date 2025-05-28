@@ -1,6 +1,6 @@
 import typer
-from tools.memory_graph import MemoryGraph
-from executors import run_codegen, run_tests, fix_errors, suggest_tests
+from cybermule.tools.memory_graph import MemoryGraph
+from cybermule.executors import run_codegen, run_tests, fix_errors, suggest_tests
 
 def run(task: str = typer.Argument(..., help="Describe the software task"),
         source_file: str = typer.Option(..., help="Source file to check test coverage"),

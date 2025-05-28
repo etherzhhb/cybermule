@@ -1,8 +1,8 @@
 import typer
-from tools.memory_graph import MemoryGraph
-from tools.config_loader import get_prompt_path
+from cybermule.tools.memory_graph import MemoryGraph
+from cybermule.tools.config_loader import get_prompt_path
 from cybermule.providers.llm_provider import ClaudeBedrockProvider
-from tools import test_runner
+from cybermule.tools import test_runner
 from pathlib import Path
 from langchain.prompts import PromptTemplate
 

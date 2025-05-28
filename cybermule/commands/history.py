@@ -1,5 +1,5 @@
 import typer
-from tools.memory_graph import MemoryGraph
+from cybermule.tools.memory_graph import MemoryGraph
 
 def run():
     graph = MemoryGraph()

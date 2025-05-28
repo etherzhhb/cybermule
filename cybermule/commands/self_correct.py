@@ -1,9 +1,9 @@
 import typer
-from tools.memory_graph import MemoryGraph
+from cybermule.tools.memory_graph import MemoryGraph
 from cybermule.providers.llm_provider import ClaudeBedrockProvider
-from tools.config_loader import get_prompt_path
+from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
-from executors import run_tests, fix_errors
+from cybermule.executors import run_tests, fix_errors
 
 def run(node_id: str = typer.Argument(..., help="Node ID of failed code/test"),
         file: str = typer.Option(..., help="Source file to run tests on"),

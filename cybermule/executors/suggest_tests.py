@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
-from tools.memory_graph import MemoryGraph
+from cybermule.tools.memory_graph import MemoryGraph
 from cybermule.providers.llm_provider import ClaudeBedrockProvider
-from tools.config_loader import get_prompt_path
+from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 
 def execute(graph: MemoryGraph, source_file: str, debug_prompt: bool = False) -> str:
