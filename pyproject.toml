@@ -1,0 +1,26 @@
+[project]
+name = "ai-code-agent"
+version = "0.1.0"
+description = "An AI-powered CLI agent for code generation, testing, and Git commit review"
+authors = [{ name = "Your Name", email = "your@email.com" }]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "typer[all]",
+    "boto3",
+    "langchain",
+    "faiss-cpu",
+    "pyyaml",
+]
+
+[project.scripts]
+ai-agent = "cli.main:app"
+
+[tool.setuptools]
+packages = ["cli", "commands", "tools", "providers"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

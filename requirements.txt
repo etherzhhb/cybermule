@@ -1,0 +1,6 @@
+boto3
+faiss-cpu
+sentence-transformers
+GitPython
+langchain
+pyyaml
