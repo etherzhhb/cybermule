@@ -36,6 +36,26 @@
 - Goal completion is checked via `task_done.j2`
 - Final result: **agent can plan, execute, adapt, and decide when done**
 
+## 🔄 Phase 6: Self-Correction Workflow
+
+- `diagnose_failure.j2` prompt to explain test/code failure
+- `self-correct <node_id> --file X.py` command:
+  - Diagnose → Fix → Re-test (retry loop)
+  - Uses `fix_code_error.j2` + `run_tests.py`
+- Integrated into `planner-loop`: auto self-correct after failed test
+- Supports retry budget (`max_retries`)
+- Fully documented in `README.md`
+
+## 📦 Phase 7: Packaging and CLI Distribution
+
+- 🔁 Renamed project to **CyberMule**
+- 🧩 Package structure reorganized under `cybermule/`
+- ✅ Added `setup.py` and `pyproject.toml`
+- ✅ Exposed CLI via entry point: `cybermule=cybermule.cli.main:app`
+- 📄 Added `__init__.py` with versioning
+- 🧪 Project can now be installed with `pip install .`
+- 📘 CLI command is available as: `cybermule <subcommand>`
+
 ## 🧪 CLI Commands
 
 | Command                       | Description                                           |
@@ -74,23 +94,3 @@
 | UI (TUI or web)                | ⏸️ On hold |
 | GitHub PR integration          | ⏸️ On hold |
 | PyPI / packaging               | 🔜 Next  |
-
-## 🔄 Phase 6: Self-Correction Workflow
-
-- `diagnose_failure.j2` prompt to explain test/code failure
-- `self-correct <node_id> --file X.py` command:
-  - Diagnose → Fix → Re-test (retry loop)
-  - Uses `fix_code_error.j2` + `run_tests.py`
-- Integrated into `planner-loop`: auto self-correct after failed test
-- Supports retry budget (`max_retries`)
-- Fully documented in `README.md`
-
-## 📦 Phase 7: Packaging and CLI Distribution
-
-- 🔁 Renamed project to **CyberMule**
-- 🧩 Package structure reorganized under `cybermule/`
-- ✅ Added `setup.py` and `pyproject.toml`
-- ✅ Exposed CLI via entry point: `cybermule=cybermule.cli.main:app`
-- 📄 Added `__init__.py` with versioning
-- 🧪 Project can now be installed with `pip install .`
-- 📘 CLI command is available as: `cybermule <subcommand>`

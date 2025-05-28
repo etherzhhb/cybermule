@@ -230,3 +230,98 @@
 111. Consider switching to `GitPython`.
 
 ---
+
+## 🧠 Prioritization Strategy
+
+We'll use four tiers of priority:
+
+| Priority | Criteria                                                      |
+| -------- | ------------------------------------------------------------- |
+| 🚨 P0    | Critical path, blocks workflows, or core correctness issues   |
+| ⚠️ P1    | High-impact enhancements, needed for better UX or reliability |
+| 🔄 P2    | Useful improvements, polish, performance, structure           |
+| 🧪 P3    | Optional features, cleanup, or experimental                   |
+
+---
+
+## ✅ Prioritized Roadmap
+
+### 🚨 **P0 – Critical Path**
+
+These unblock core workflows or fix broken behaviors:
+
+* **59**: \[suggest\_tests.py] Fallback for missing coverage file
+* **45**: \[fix\_errors.py] Fallback if test node is not found
+* **60**: Add timestamp, mode, and tags metadata to each node (essential for tracking sessions)
+* **61**: MemoryGraph: rich queries for `retry`, `history`, etc.
+* **29–32**: Retry system: file output, diff, metadata integration
+* **83–86**: ClaudeBedrockProvider: support temperature, streaming, error handling, define interface
+* **94–96**: code\_generator: debugging, prompt inspection, template override
+* **103–105**: config\_loader: caching, validation, warning on broken configs
+* **106**: git\_inspector: handle edge cases (e.g., non-Git repo)
+
+---
+
+### ⚠️ **P1 – High Impact Enhancements**
+
+* **10–12, 17–20**: CLI UX: `describe-node`, `history`, formatting improvements
+* **37–40**: show\_log: autocomplete, redaction, field extraction
+* **65–73**: Prompt constraints (e.g., JSON-only, no commentary, max length)
+* **87–91**: LLM/Embedding abstraction: `LLMProvider`, `embed_batch()`, model metadata
+* **97–101**: code\_indexer: batch embedding, path/line trace, configurable dim
+* **48–50**: codegen: output path, file return, streaming
+* **52–55**: run\_tests: return stdout/stderr, parse summary
+* **57–58**: test suggestion fallback + uncovered line filtering
+* **63–64**: Refactor: move memory\_graph, delete old memory/
+
+---
+
+### 🔄 **P2 – Core Functionality Polish**
+
+* **13–16**: filter.py: directory scan, print, match stats
+* **21–24**: plan.py: invalid JSON fallback, output path, summary
+* **25–28**: planner\_loop: dry-run, executor override, logging
+* **33–36**: self\_correct: dry-run, summary, visual retry tree
+* **74–82**: prompt enhancements: structure output, test formatting
+* **107–108**: git\_inspector structured diffs
+* **109–111**: git\_utils: error handling, GitPython switch
+
+---
+
+### 🧪 **P3 – Optional/Low Priority**
+
+* **1–3**: generate.py: multiple files, empty retry handling
+* **7–9**: analyze\_coverage: batch mode, highlight uncovered lines
+* **102**: compiler.py: currently empty
+* **92–93**: docker\_runner.py: placeholder or removal
+* **56**: suggest\_tests.py: batch test suggestion
+* **46–47**: fix\_errors: optional return/flexible prompt
+
+---
+
+## 🔧 Suggested Execution Plan
+
+### 🏁 **Phase 1 (Foundations, unblock core)**
+
+* Retry support (29–32)
+* MemoryGraph metadata + queries (60–61)
+* Claude + config loader stability (83–86, 103–106)
+* Fallback behavior in prompt and codegen (45, 59, 94–96)
+* Prompt template strictness (65–73)
+
+### 🚀 **Phase 2 (User Experience + CLI)**
+
+* describe-node/history/show-log (10–12, 17–20, 37–40)
+* Smart `filter`, improved plan/retry loops (13–16, 21–28, 33–36)
+* UX cleanup in prompts (74–82)
+
+### 🔄 **Phase 3 (Indexing + Git)**
+
+* Improve code\_indexer and embedding provider (87–91, 97–101)
+* Structured git output + robustness (107–111)
+
+### 📦 **Phase 4 (Nice-to-Haves)**
+
+* Batch suggestion tools, docker/compile support (1–3, 7–9, 46–47, 92–93, 102)
+
+---
