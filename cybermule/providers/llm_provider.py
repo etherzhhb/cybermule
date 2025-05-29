@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import json
 from pathlib import Path
+from cybermule.tools.config_loader import load_config
 import yaml
 
 # === Unified Interface === #
@@ -45,15 +46,24 @@ class ClaudeBedrockProvider(LLMProvider):
         result = json.loads(response['body'].read())
         return result["content"][0]["text"]  # May vary depending on Claude output format
 
+# === Mock Implementation for Testing === #
+class MockLLMProvider(LLMProvider):
+    def __init__(self, model_id=None, **kwargs):
+        self.model_id = model_id or "mock"
+
+    def generate(self, prompt: str) -> str:
+        return f"[MOCKED] Response to: {prompt}"
+
+
 # === Optional Factory === #
 LLM_REGISTRY = {
     "claude": ClaudeBedrockProvider,
+    "mock": MockLLMProvider,
     # Future: "openai": OpenAIProvider,
 }
 
 def get_llm_provider(config_path: str = "config.yaml") -> LLMProvider:
-    with open(Path(config_path), "r") as f:
-        config = yaml.safe_load(f)
+    config = load_config()
 
     llm_cfg = config.get("llm", {})
     name = llm_cfg.pop("provider", None)
