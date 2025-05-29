@@ -1,11 +1,11 @@
 import faiss
 import numpy as np
 import ast
-from cybermule.providers.embedding_provider import SentenceTransformerProvider
+from cybermule.providers.embedding_provider import get_embedding_provider
 
 class CodeIndexer:
     def __init__(self):
-        self.embedder = SentenceTransformerProvider()
+        self.embedder = get_embedding_provider()
         self.texts = []
         self.ids = []
         self.index = faiss.IndexFlatL2(384)  # MiniLM-L6 output size

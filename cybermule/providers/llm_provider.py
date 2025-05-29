@@ -62,7 +62,7 @@ LLM_REGISTRY = {
     # Future: "openai": OpenAIProvider,
 }
 
-def get_llm_provider(config_path: str = "config.yaml") -> LLMProvider:
+def get_llm_provider() -> LLMProvider:
     config = load_config()
 
     llm_cfg = config.get("llm", {})
