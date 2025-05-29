@@ -1,6 +1,10 @@
-[![CI](https://github.com/your-username/cybermule/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/cybermule/actions)
-
 # 🤖 Cybermule
+
+[![CI](https://github.com/etherzhhb/cybermule/actions/workflows/ci.yml/badge.svg)](https://github.com/etherzhhb/cybermule/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/etherzhhb/cybermule/branch/main/graph/badge.svg)](https://codecov.io/gh/etherzhhb/cybermule)
+
+An AI-powered CLI agent for code generation, testing, and Git commit review.
+
 
 An autonomous AI coding agent that can generate, test, and refine code using Bedrock Claude or OpenAI. Supports a modular executor system and planner-agent loop.
 
