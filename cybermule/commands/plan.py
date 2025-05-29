@@ -1,7 +1,7 @@
 import typer
 from pathlib import Path
 from cybermule.tools.memory_graph import MemoryGraph
-from cybermule.providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import LLMProvider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 import json
@@ -19,7 +19,7 @@ def run(task: str = typer.Argument(..., help="Task description"),
     if debug_prompt:
         print("\n--- Plan Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-    llm = ClaudeBedrockProvider()
+    llm = LLMProvider()
     output = llm.generate(prompt)
 
     graph.update(node_id, prompt=prompt, response=output, status="PLANNED")

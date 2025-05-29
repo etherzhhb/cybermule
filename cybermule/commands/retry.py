@@ -1,7 +1,7 @@
 import typer
 from cybermule.tools.memory_graph import MemoryGraph
 from cybermule.tools.config_loader import get_prompt_path
-from cybermule.providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import LLMProvider
 from cybermule.tools import test_runner
 from pathlib import Path
 from langchain.prompts import PromptTemplate
@@ -12,7 +12,7 @@ def load_template(name: str) -> str:
 
 def run(node_id: str, debug_prompt: bool = typer.Option(False, help="Print rendered fix prompt before calling LLM")):
     graph = MemoryGraph()
-    claude = ClaudeBedrockProvider()
+    claude = LLMProvider()
 
     matches = [n for n in graph.list() if n["id"].startswith(node_id)]
     if not matches:

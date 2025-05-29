@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from cybermule.tools.memory_graph import MemoryGraph
-from cybermule.providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import LLMProvider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 
@@ -40,7 +40,7 @@ def execute(graph: MemoryGraph, source_file: str, debug_prompt: bool = False) ->
     if debug_prompt:
         print("\n--- Suggest Tests Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-    llm = ClaudeBedrockProvider()
+    llm = LLMProvider()
     suggestions = llm.generate(prompt)
 
     graph.update(node_id, prompt=prompt, response=suggestions, status="SUGGESTED")

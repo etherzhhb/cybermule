@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 from datetime import datetime
-from cybermule.providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import LLMProvider
 from tools import code_generator, test_runner, code_indexer, git_inspector
 
 def log_session(data, mode):
@@ -133,7 +133,7 @@ def main():
         filter_session_logs(keyword=args.filter, mode=args.filter_mode, date=args.filter_date)
         return
 
-    claude = ClaudeBedrockProvider()
+    claude = LLMProvider()
 
     if args.mode == "generate":
         generate_mode(claude)

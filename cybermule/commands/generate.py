@@ -1,5 +1,5 @@
 import typer
-from cybermule.providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import LLMProvider
 from cybermule.tools import code_generator, test_runner, code_indexer
 from cybermule.tools.memory_graph import MemoryGraph
 from cybermule.tools.config_loader import get_prompt_path
@@ -11,7 +11,7 @@ def load_template(name: str) -> str:
     return path.read_text(encoding="utf-8")
 
 def run(debug_prompt: bool = typer.Option(False, help='Print rendered prompt before calling LLM')):
-    claude = ClaudeBedrockProvider()
+    claude = LLMProvider()
     graph = MemoryGraph()
     task = typer.prompt("What do you want the agent to do?")
 

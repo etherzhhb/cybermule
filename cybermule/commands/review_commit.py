@@ -1,5 +1,5 @@
 import typer
-from cybermule.providers.llm_provider import ClaudeBedrockProvider
+from cybermule.providers.llm_provider import LLMProvider
 from cybermule.tools.config_loader import get_prompt_path
 from cybermule.tools import git_utils
 from cybermule.tools.memory_graph import MemoryGraph
@@ -22,7 +22,7 @@ def run(debug_prompt: bool = typer.Option(False, help="Print the rendered prompt
     if debug_prompt:
         typer.echo("\n--- Review Commit Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-    llm = ClaudeBedrockProvider()
+    llm = LLMProvider()
     review = llm.generate(prompt)
 
     typer.echo(f"🔍 Commit SHA: {commit_sha}\n")

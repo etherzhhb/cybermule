@@ -34,3 +34,4 @@ dev = [
     "black",
     "ruff"
 ]
+claude = ["boto3"]
