@@ -1,0 +1,8 @@
+llm:
+  provider: "mock"
+  model_id: "mock"
+
+prompt_paths:
+  generate_code: prompts/generate_code.j2
+  fix_code_error: prompts/fix_code_error.j2
+  review_commit: prompts/review_commit.j2
