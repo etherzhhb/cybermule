@@ -2,12 +2,12 @@ You are an expert software engineer helping review a Git commit.
 
 Below is the commit message:
 ---
-{{ commit_message }}
+{commit_message}
 ---
 
 Here is the diff of the commit:
 ---
-{{ commit_diff }}
+{commit_diff}
 ---
 
 Please provide:
