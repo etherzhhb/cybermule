@@ -1,10 +1,7 @@
 llm:
-  provider: "claude"
-  model_id: "anthropic.claude-3-sonnet-20240229"
-  region: "us-east-1"
-  temperature: 0.7
-  max_tokens: 1024
-  system_prompt: "You are a helpful assistant."
+  provider: "ollama"
+  model_id: "mistral"
+  base_url: "http://localhost:11434"
 
 prompt_paths:
   generate_code: prompts/generate_code.j2

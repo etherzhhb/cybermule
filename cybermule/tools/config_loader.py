@@ -10,4 +10,4 @@ def load_config():
 
 def get_prompt_path(name: str) -> str:
     config = load_config()
-    return config.get("prompt_paths", {}).get(name, f"prompts/{name}.j2")
+    return config.get("prompt_paths", {}).get(name, f"prompts/{name}")

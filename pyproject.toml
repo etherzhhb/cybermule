@@ -35,3 +35,4 @@ dev = [
     "ruff"
 ]
 claude = ["boto3"]
+ollama = ["langchain_ollama"]

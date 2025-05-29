@@ -46,6 +46,16 @@ class ClaudeBedrockProvider(LLMProvider):
         result = json.loads(response['body'].read())
         return result["content"][0]["text"]  # May vary depending on Claude output format
 
+
+# === OllamaLLM Implementation === #
+class OllamaProvider(LLMProvider):
+    def __init__(self, model_id: str, base_url=None):
+        from langchain_ollama import OllamaLLM
+        self.llm = OllamaLLM(model=model_id, base_url=base_url)
+
+    def generate(self, prompt: str) -> str:
+        return self.llm.invoke(prompt)
+
 # === Mock Implementation for Testing === #
 class MockLLMProvider(LLMProvider):
     def __init__(self, model_id=None, **kwargs):
@@ -58,6 +68,7 @@ class MockLLMProvider(LLMProvider):
 # === Optional Factory === #
 LLM_REGISTRY = {
     "claude": ClaudeBedrockProvider,
+    "ollama": OllamaProvider,
     "mock": MockLLMProvider,
     # Future: "openai": OpenAIProvider,
 }

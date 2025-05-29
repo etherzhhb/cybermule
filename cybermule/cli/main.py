@@ -1,9 +1,16 @@
 import importlib
 
 import typer
+import logging
 from cybermule.commands import generate, review_commit, history, show_log, filter
 
 app = typer.Typer()
+
+@app.callback()
+def main(verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging")):
+    level = logging.DEBUG if verbose else logging.WARNING
+    logging.basicConfig(level=level)
+    logging.debug("Verbose mode enabled")
 
 app.command("generate")(generate.run)
 app.command("review-commit")(review_commit.run)
