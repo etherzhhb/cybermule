@@ -7,3 +7,4 @@ __pycache__/
 *.py[cod]
 .coverage
 coverage.xml
+memory_graph.json

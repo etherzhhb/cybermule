@@ -9,11 +9,18 @@ class EmbeddingProvider(ABC):
         """Convert input text to a vector embedding."""
         pass
 
+    @property
+    def output_size(self):
+        raise NotImplementedError
+
 
 class MockEmbeddingProvider(EmbeddingProvider):
     def embed(self, text: str) -> List[float]:
-        return [0.1] * 768
+        return [0.1] * 384
 
+    @property
+    def output_size(self):
+        return 384
 
 class SentenceTransformerProvider(EmbeddingProvider):
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
@@ -29,6 +36,9 @@ class SentenceTransformerProvider(EmbeddingProvider):
     def embed(self, text: str) -> List[float]:
         return self.model.encode([text])[0].tolist()
 
+    @property
+    def output_size(self):
+        return 384
 
 def get_embedding_provider() -> EmbeddingProvider:
     config = load_config()

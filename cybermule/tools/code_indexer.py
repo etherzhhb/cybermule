@@ -8,7 +8,7 @@ class CodeIndexer:
         self.embedder = get_embedding_provider()
         self.texts = []
         self.ids = []
-        self.index = faiss.IndexFlatL2(384)  # MiniLM-L6 output size
+        self.index = faiss.IndexFlatL2(self.embedder.output_size)  # MiniLM-L6 output size
         self.next_id = 0
 
     def add_file(self, path: str):
