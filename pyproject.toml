@@ -1,5 +1,5 @@
 [project]
-name = "ai-code-agent"
+name = "cybermule"
 version = "0.1.0"
 description = "An AI-powered CLI agent for code generation, testing, and Git commit review"
 authors = [{ name = "Your Name", email = "your@email.com" }]
@@ -16,11 +16,23 @@ dependencies = [
 ]
 
 [project.scripts]
-ai-agent = "cli.main:app"
+cybermule = "cybermule.cli.main:app"
 
-[tool.setuptools]
-packages = ["cli", "commands", "tools", "providers"]
+[tool.setuptools.packages.find]
+where = ["cybermule"]
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "ruff"
+]
