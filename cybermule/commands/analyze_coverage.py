@@ -2,7 +2,7 @@ import json
 import typer
 from pathlib import Path
 from langchain.prompts import PromptTemplate
-from cybermule.providers.llm_provider import LLMProvider
+from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
 
 def run(file: str, debug_prompt: bool = typer.Option(False, help="Print rendered prompt before sending to LLM")):
@@ -39,7 +39,7 @@ def run(file: str, debug_prompt: bool = typer.Option(False, help="Print rendered
     if debug_prompt:
         typer.echo("\n--- Test Suggestion Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-    llm = LLMProvider()
+    llm = get_llm_provider()
     suggestions = llm.generate(prompt)
 
     typer.echo("🧪 Suggested Tests:\n")

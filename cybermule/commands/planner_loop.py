@@ -1,6 +1,6 @@
 import typer
 from cybermule.tools.memory_graph import MemoryGraph
-from cybermule.providers.llm_provider import LLMProvider
+from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 from cybermule.executors import run_codegen, run_tests, fix_errors, suggest_tests
@@ -16,7 +16,7 @@ def classify_executor(desc: str) -> str:
     prompt_path = get_prompt_path("classify_step.j2")
     prompt_template = PromptTemplate.from_template(Path(prompt_path).read_text())
     prompt = prompt_template.format(step_description=desc)
-    llm = LLMProvider()
+    llm = get_llm_provider()
     label = llm.generate(prompt).strip()
     return label
 
@@ -69,7 +69,7 @@ def run(plan_node_id: str = typer.Argument(..., help="Node ID of the plan"),
         prompt_template = PromptTemplate.from_template(Path(prompt_path).read_text())
         prompt = prompt_template.format(task_description=task_description, history=history_summary)
 
-        llm = LLMProvider()
+        llm = get_llm_provider()
         result = llm.generate(prompt).strip().upper()
 
         typer.echo(f"\n📌 Task completion decision: {result}")

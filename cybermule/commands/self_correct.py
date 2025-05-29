@@ -1,6 +1,6 @@
 import typer
 from cybermule.tools.memory_graph import MemoryGraph
-from cybermule.providers.llm_provider import LLMProvider
+from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 from cybermule.executors import run_tests, fix_errors
@@ -25,7 +25,7 @@ def run(node_id: str = typer.Argument(..., help="Node ID of failed code/test"),
         if debug_prompt:
             print("\n--- Diagnose Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-        llm = LLMProvider()
+        llm = get_llm_provider()
         diagnosis = llm.generate(prompt)
 
         # Log diagnosis

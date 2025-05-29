@@ -1,5 +1,5 @@
 from cybermule.tools.memory_graph import MemoryGraph
-from cybermule.providers.llm_provider import LLMProvider
+from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 from pathlib import Path
@@ -22,7 +22,7 @@ def execute(graph: MemoryGraph, parent_node_id: str, debug_prompt: bool = False)
     if debug_prompt:
         print("\n--- Fix Code Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-    llm = LLMProvider()
+    llm = get_llm_provider()
     fixed_code = llm.generate(prompt)
 
     graph.update(node_id, prompt=prompt, response=fixed_code, status="RETRIED")
