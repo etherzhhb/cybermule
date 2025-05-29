@@ -30,6 +30,7 @@ testpaths = ["tests"]
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-cov",
     "black",
     "ruff"
 ]
