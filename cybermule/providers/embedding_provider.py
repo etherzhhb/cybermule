@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List
-from cybermule.tools.config_loader import load_config
-
 
 class EmbeddingProvider(ABC):
     @abstractmethod

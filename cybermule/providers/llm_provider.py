@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 import json
 from pathlib import Path
-from cybermule.tools.config_loader import load_config
-import yaml
 
 # === Unified Interface === #
 class LLMProvider(ABC):
@@ -73,9 +71,7 @@ LLM_REGISTRY = {
     # Future: "openai": OpenAIProvider,
 }
 
-def get_llm_provider() -> LLMProvider:
-    config = load_config()
-
+def get_llm_provider(config) -> LLMProvider:
     llm_cfg = config.get("llm", {})
     name = llm_cfg.pop("provider", None)
     if not name:
