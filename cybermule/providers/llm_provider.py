@@ -1,7 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 # === Unified Interface === #
 class LLMProvider:
@@ -37,26 +37,45 @@ class LLMProvider:
         raise NotImplementedError
 
 
-# === Claude Implementation === #
-class ClaudeBedrockProvider(LLMProvider):
-    def __init__(self, model_id, region, temperature=0.7, max_tokens=1024, system_prompt='',
-                 **kwargs):
+# === Claude Base Implementation === #
+class ClaudeBaseProvider(LLMProvider):
+    def __init__(
+        self, 
+        model_id: str, 
+        temperature: float = 0.7, 
+        max_tokens: int = 20000, 
+        system_prompt: str = '',
+        **kwargs
+    ):
         super().__init__(**kwargs)
-        import boto3
         self.model_id = model_id
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.system_prompt = system_prompt
+        
+    def _format_messages(self, prompt: str) -> List[Dict[str, Any]]:
+        messages = []
+        if self.system_prompt:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+        return messages
+        
+    def generate_impl(self, prompt: str) -> str:
+        messages = self._format_messages(prompt)
+        return self._call_api(messages)
+        
+    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+        raise NotImplementedError
+
+
+# === Claude Bedrock Implementation === #
+class ClaudeBedrockProvider(ClaudeBaseProvider):
+    def __init__(self, model_id: str, region: str, **kwargs):
+        super().__init__(model_id=model_id, **kwargs)
+        import boto3
         self.client = boto3.client("bedrock-runtime", region_name=region)
 
-    def generate_impl(self, prompt: str) -> str:
-        messages = []
-
-        system_prompt = self.system_prompt
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-
+    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "messages": messages,
@@ -72,7 +91,24 @@ class ClaudeBedrockProvider(LLMProvider):
         )
 
         result = json.loads(response['body'].read())
-        return result["content"][0]["text"]  # May vary depending on Claude output format
+        return result["content"][0]["text"]
+
+
+# === Claude Direct API Implementation === #
+class ClaudeDirectProvider(ClaudeBaseProvider):
+    def __init__(self, api_key: Optional[str] = None, **kwargs):
+        super().__init__(**kwargs)
+        import anthropic
+        self.client = anthropic.Anthropic(api_key=api_key)
+
+    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+        message = self.client.messages.create(
+            model=self.model_id,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            messages=messages
+        )
+        return message.content[0].text
 
 
 # === OllamaLLM Implementation === #
@@ -85,6 +121,7 @@ class OllamaProvider(LLMProvider):
     def generate_impl(self, prompt: str) -> str:
         return self.llm.invoke(prompt)
 
+
 # === Mock Implementation for Testing === #
 class MockLLMProvider(LLMProvider):
     def __init__(self, model_id=None, **kwargs):
@@ -93,25 +130,6 @@ class MockLLMProvider(LLMProvider):
 
     def generate(self, prompt: str) -> str:
         return f"[MOCKED] Response to: {prompt}"
-    
-# === Claude Direct API Implementation === #
-class ClaudeDirectProvider(LLMProvider):
-    def __init__(self, model_id: str, temperature=1, max_tokens=20000, system_prompt='',
-                 api_key: Optional[str] = None, **kwargs):
-        super().__init__(**kwargs)
-        import anthropic
-        self.client = anthropic.Anthropic(api_key=api_key)
-        self.model_id = model_id
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-
-    def generate_impl(self, prompt: str) -> str:
-        message = self.client.messages.create(
-            model=self.model_id,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            messages=[{"role": "user", "content": [{"type": "text", "text": prompt}]}])
-        return message.content[0].text
 
 
 # === Optional Factory === #
