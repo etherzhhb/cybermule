@@ -26,7 +26,7 @@ def run(
         typer.echo("\n--- Refactor Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider(config)
-    response = llm.generate(prompt)
+    response = llm.generate(prompt, partial_assistant_response="<refactoring_analysis>")
 
     if ctx.obj["debug_prompt"]:
         typer.echo("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")

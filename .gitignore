@@ -8,4 +8,4 @@ __pycache__/
 .coverage
 coverage.xml
 memory_graph.json
-/.llm_cache.json
+.llm_cache.json
