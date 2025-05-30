@@ -2,6 +2,7 @@ import typer
 from pathlib import Path
 import difflib
 from langchain.prompts import PromptTemplate
+from markdown_it import MarkdownIt
 
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
@@ -30,17 +31,26 @@ def run(
     if ctx.obj["debug_prompt"]:
         typer.echo("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")
 
+    refactored_code, = extract_code_blocks(response)
+
     if preview:
         diff = difflib.unified_diff(
             file_text.splitlines(),
-            response.splitlines(),
+            refactored_code.splitlines(),
             fromfile=str(file),
             tofile=f"{file}.refactored",
             lineterm=""
         )
         typer.echo("\n".join(diff))
-    else:
-        backup = file.with_suffix(file.suffix + ".bak")
-        file.rename(backup)
-        file.write_text(response)
-        typer.echo(f"✅ Refactoring complete. Original backed up to {backup}")
+        return
+
+    file.write_text(refactored_code)
+    typer.echo(f"✅ Refactoring complete.")
+
+def extract_code_blocks(text):
+  md = MarkdownIt()
+  tokens = md.parse(text)
+  return [
+      t.content for t in tokens
+      if t.type == "fence" and t.info.strip() in ("python", "")
+  ]

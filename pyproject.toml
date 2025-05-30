@@ -12,6 +12,7 @@ dependencies = [
     "langchain",
     "faiss-cpu",
     "pyyaml",
+    "markdown-it-py",
 ]
 
 [project.scripts]
