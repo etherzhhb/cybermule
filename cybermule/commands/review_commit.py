@@ -8,8 +8,7 @@ from pathlib import Path
 
 def run(ctx: typer.Context,
         sha: str = typer.Option(None, help="Commit SHA to review (default: latest)"),
-        fetch: str = typer.Option(None, help="Git remote to fetch before reviewing"),
-        debug_prompt: bool = typer.Option(False, help="Print the rendered prompt before sending to LLM")):
+        fetch: str = typer.Option(None, help="Git remote to fetch before reviewing")):
     if fetch:
         typer.echo(f"📡 Fetching from remote '{fetch}'...")
         git_utils.fetch_remote(fetch)
@@ -27,7 +26,7 @@ def run(ctx: typer.Context,
     prompt_template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = prompt_template.format(commit_message=commit_msg, commit_diff=commit_diff)
 
-    if debug_prompt:
+    if ctx.obj["debug_prompt"]:
         typer.echo("\n--- Review Commit Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider(config)
