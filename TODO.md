@@ -12,7 +12,7 @@
 
 #### `review_commit.py`
 
-4. Add `--commit <sha>` flag to specify commit.
+4. ~~Add `--commit <sha>` flag to specify commit.~~
 5. Include file content context from changed files.
 6. Support markdown or HTML output formatting for review results.
 
