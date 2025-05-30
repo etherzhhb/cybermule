@@ -9,7 +9,6 @@ requires-python = ">=3.9"
 
 dependencies = [
     "typer[all]",
-    "boto3",
     "langchain",
     "faiss-cpu",
     "pyyaml",
