@@ -5,7 +5,7 @@ def run(ctx: typer.Context):
     typer.echo("[🔍] Checking LLM provider connection...")
     try:
         llm = get_llm_provider(ctx.obj["config"])
-        response = llm.generate("Say hello")
+        response = llm.generate("Say hello and identify yourself")
         typer.echo("[✅] LLM connection successful!")
         typer.echo(f"[🤖] Model response: {response.strip()}")
     except Exception as e:
