@@ -1,4 +1,5 @@
 import importlib
+import os
 from pathlib import Path
 import typer
 import logging
@@ -20,12 +21,30 @@ def main(
         file_okay=True,
         readable=True,
     ),
+    cwd: Path = typer.Option(
+        None,
+        "--cwd",
+        help="Change to this directory before executing commands",
+        exists=True,
+        dir_okay=True,
+        readable=True,
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
     debug_prompt: bool = typer.Option(False, help="Print the rendered prompt before sending to LLM")
 ):
     level = logging.DEBUG if verbose else logging.WARNING
     logging.basicConfig(level=level)
     logging.debug("Verbose mode enabled")
+
+    # Change working directory if specified
+    if cwd:
+        try:
+            original_cwd = os.getcwd()
+            os.chdir(cwd)
+            logging.debug(f"Changed working directory from {original_cwd} to {cwd}")
+        except OSError as e:
+            typer.echo(f"Error: Could not change to directory '{cwd}': {e}", err=True)
+            raise typer.Exit(1)
 
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
