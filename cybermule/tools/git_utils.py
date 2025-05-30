@@ -12,3 +12,15 @@ def get_latest_commit_message() -> str:
 
 def get_latest_commit_diff() -> str:
     return run_git_command(["git", "diff", "HEAD~1", "HEAD"])
+
+def fetch_remote(remote: str) -> None:
+    """Fetch latest changes from the given remote."""
+    run_git_command(["git", "fetch", remote])
+
+def get_commit_message(sha: str) -> str:
+    """Get commit message for a specific SHA."""
+    return run_git_command(["git", "log", "-1", "--pretty=%B", sha])
+
+def get_commit_diff(sha: str) -> str:
+    """Get diff for a specific commit SHA."""
+    return run_git_command(["git", "show", sha, "--no-color"])
