@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import json
 from pathlib import Path
+from typing import Optional
 
 # === Unified Interface === #
 class LLMProvider(ABC):
@@ -61,11 +62,30 @@ class MockLLMProvider(LLMProvider):
 
     def generate(self, prompt: str) -> str:
         return f"[MOCKED] Response to: {prompt}"
+    
+# === Claude Direct API Implementation === #
+class ClaudeDirectProvider(LLMProvider):
+    def __init__(self, model_id: str, temperature=1, max_tokens=20000, system_prompt='',
+                 api_key: Optional[str] = None):
+        import anthropic
+        self.client = anthropic.Anthropic(api_key=api_key)
+        self.model_id = model_id
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+
+    def generate(self, prompt: str) -> str:
+        message = self.client.messages.create(
+            model=self.model_id,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            messages=[{"role": "user", "content": [{"type": "text", "text": prompt}]}])
+        return message.content[0].text
 
 
 # === Optional Factory === #
 LLM_REGISTRY = {
-    "claude": ClaudeBedrockProvider,
+    "aws": ClaudeBedrockProvider,
+    "anthropic": ClaudeDirectProvider,
     "ollama": OllamaProvider,
     "mock": MockLLMProvider,
     # Future: "openai": OpenAIProvider,

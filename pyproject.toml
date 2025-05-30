@@ -33,5 +33,6 @@ dev = [
     "black",
     "ruff"
 ]
-claude = ["boto3"]
+aws = ["boto3"]
 ollama = ["langchain_ollama"]
+anthropic = ["anthropic"]
