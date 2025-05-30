@@ -6,7 +6,8 @@ from cybermule.tools.memory_graph import MemoryGraph
 from langchain.prompts import PromptTemplate
 from pathlib import Path
 
-def run(debug_prompt: bool = typer.Option(False, help="Print the rendered prompt before sending to LLM")):
+def run(ctx: typer.Context,
+        debug_prompt: bool = typer.Option(False, help="Print the rendered prompt before sending to LLM")):
     commit_sha = git_utils.get_latest_commit_sha()
     commit_msg = git_utils.get_latest_commit_message()
     commit_diff = git_utils.get_latest_commit_diff()
@@ -15,14 +16,15 @@ def run(debug_prompt: bool = typer.Option(False, help="Print the rendered prompt
     graph = MemoryGraph()
     node_id = graph.new(task)
 
-    prompt_path = Path(__file__).parent.parent / get_prompt_path("review_git_commit.prompt")
+    config = ctx.obj["config"]
+    prompt_path = Path(__file__).parent.parent / get_prompt_path(config, name="review_git_commit.prompt")
     prompt_template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = prompt_template.format(commit_message=commit_msg, commit_diff=commit_diff)
 
     if debug_prompt:
         typer.echo("\n--- Review Commit Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-    llm = get_llm_provider()
+    llm = get_llm_provider(config)
     review = llm.generate(prompt)
 
     typer.echo(f"🔍 Commit SHA: {commit_sha}\n")

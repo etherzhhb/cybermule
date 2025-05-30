@@ -1,10 +1,10 @@
 import typer
 from cybermule.providers.llm_provider import get_llm_provider
 
-def run():
+def run(ctx: typer.Context):
     typer.echo("[🔍] Checking LLM provider connection...")
     try:
-        llm = get_llm_provider()
+        llm = get_llm_provider(ctx.obj["config"])
         response = llm.generate("Say hello")
         typer.echo("[✅] LLM connection successful!")
         typer.echo(f"[🤖] Model response: {response.strip()}")
