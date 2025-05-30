@@ -7,10 +7,16 @@ from langchain.prompts import PromptTemplate
 from pathlib import Path
 
 def run(ctx: typer.Context,
+        sha: str = typer.Option(None, help="Commit SHA to review (default: latest)"),
+        fetch: str = typer.Option(None, help="Git remote to fetch before reviewing"),
         debug_prompt: bool = typer.Option(False, help="Print the rendered prompt before sending to LLM")):
-    commit_sha = git_utils.get_latest_commit_sha()
-    commit_msg = git_utils.get_latest_commit_message()
-    commit_diff = git_utils.get_latest_commit_diff()
+    if fetch:
+        typer.echo(f"📡 Fetching from remote '{fetch}'...")
+        git_utils.fetch_remote(fetch)
+
+    commit_sha = sha or git_utils.get_latest_commit_sha()
+    commit_msg = git_utils.get_commit_message(commit_sha)
+    commit_diff = git_utils.get_commit_diff(commit_sha)
 
     task = f"Review commit {commit_sha[:7]}"
     graph = MemoryGraph()
