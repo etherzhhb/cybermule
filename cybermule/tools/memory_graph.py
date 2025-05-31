@@ -12,6 +12,9 @@ class MemoryGraph:
 
     def _load(self):
         """Load graph data from JSON file and reconstruct NetworkX graph."""
+        if self.storage_path.stat().st_size == 0:
+            return  # Skip loading if file is empty
+    
         with open(self.storage_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         
