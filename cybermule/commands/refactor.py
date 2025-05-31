@@ -1,13 +1,8 @@
 import typer
 from pathlib import Path
-import difflib
-from markdown_it import MarkdownIt
 from typing import List, Optional
 
-from cybermule.providers.llm_provider import get_llm_provider
-from cybermule.tools.config_loader import get_prompt_path
-from cybermule.utils.file_utils import read_file_content, resolve_context_inputs
-from cybermule.utils.template_utils import render_template
+from cybermule.executors import run_refactor
 
 def run(
     ctx: typer.Context,
@@ -20,62 +15,15 @@ def run(
         help="Paths, directories, or glob patterns for files to provide context. Accepts globs and folders.",
     ),
 ):
-    config = ctx.obj["config"]
+    config = ctx.obj.get("config", {})
+    debug = ctx.obj.get("debug_prompt", False)
 
-    typer.echo(f"🛠️  Refactoring {file} with goal: '{goal}'")
-    file_text = read_file_content(file)
-
-    # Resolve and process context files
-    context_code = ""
-    if context:
-        context_files = resolve_context_inputs(context)
-        context_parts = []
-        for context_file in context_files:
-            content = read_file_content(context_file)
-            if content:
-                context_parts.append(f"# File: {context_file.name}\n{content}")
-        if context_parts:
-            context_code = "\n\n".join(context_parts)
-            typer.echo(f"📚 Added {len(context_files)} context file(s)")
-
-    # Load and render the template
-    prompt_path = Path(__file__).parent.parent / get_prompt_path(config, name="refactor.j2")
-    template_vars = {
-        "PYTHON_CODE": file_text,
-        "REFACTORING_GOAL": goal,
-        "CONTEXT_CODE": context_code
-    }
-    prompt = render_template(prompt_path, template_vars)
-
-    if ctx.obj["debug_prompt"]:
-        typer.echo("\n--- Refactor Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
-
-    llm = get_llm_provider(config)
-    response = llm.generate(prompt, partial_assistant_response="<refactoring_analysis>")
-
-    if ctx.obj["debug_prompt"]:
-        typer.echo("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")
-
-    refactored_code, = extract_code_blocks(response)
-
-    if preview:
-        diff = difflib.unified_diff(
-            file_text.splitlines(),
-            refactored_code.splitlines(),
-            fromfile=str(file),
-            tofile=f"{file}.refactored",
-            lineterm=""
-        )
-        typer.echo("\n".join(diff))
-        return
-
-    file.write_text(refactored_code)
-    typer.echo(f"✅ Refactoring complete.")
-
-def extract_code_blocks(text):
-    md = MarkdownIt()
-    tokens = md.parse(text)
-    return [
-        t.content for t in tokens
-        if t.type == "fence" and t.info.strip() in ("python", "")
-    ]
+    run_refactor.execute(
+        graph=None,
+        file=file,
+        goal=goal,
+        context=context,
+        preview=preview,
+        debug_prompt=debug,
+        config=config
+    )
