@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 from pathlib import Path
 import networkx as nx
@@ -17,10 +18,21 @@ class MemoryGraph:
     def _save(self):
         save_graph_to_file(self.graph, self.storage_path)
 
-    def new(self, task, parent_id=None):
+    def new(self, task, parent_id=None, tags=None, mode=None):
         node_id = str(uuid.uuid4())
-        self.graph.add_node(node_id, id=node_id, task=task,
-                            prompt="", response="", status="PENDING", error="", parent=parent_id)
+        node_attrs = {
+            "id": node_id,
+            "task": task,
+            "prompt": "",
+            "response": "",
+            "status": "PENDING",
+            "error": "",
+            "parent": parent_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "tags": tags or [],
+            "mode": mode or ""
+        }
+        self.graph.add_node(node_id, **node_attrs)
         if parent_id and parent_id in self.graph:
             self.graph.add_edge(parent_id, node_id)
         self._save()
