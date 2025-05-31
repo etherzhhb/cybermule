@@ -69,19 +69,26 @@ def execute(
     if debug_prompt:
         print("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")
 
+    diff = difflib.unified_diff(
+        file_text.splitlines(),
+        refactored_code.splitlines(),
+        fromfile=str(file),
+        tofile=f"{file}.refactored",
+        lineterm=""
+    )
+
+    diff_txt = "\n".join(diff)
     if preview:
-        diff = difflib.unified_diff(
-            file_text.splitlines(),
-            refactored_code.splitlines(),
-            fromfile=str(file),
-            tofile=f"{file}.refactored",
-            lineterm=""
-        )
-        print("\n".join(diff))
+        print(diff_txt)
+        status = "REFACTOR_PREVIEWED"
     else:
         file.write_text(refactored_code)
+        status="REFACTORED"
 
-    local_graph.update(node_id, prompt=prompt, response=refactored_code, status="REFACTORED")
+    local_graph.update(node_id, prompt=prompt, response=response,
+                       original_code=file_text, context_code=context_code,
+                       generated_code=refactored_code, diff=diff_txt,
+                       goal=goal, status=status)
     return node_id if graph else None
 
 
