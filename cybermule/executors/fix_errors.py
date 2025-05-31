@@ -28,7 +28,7 @@ def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str,
 
     llm = get_llm_provider(config)
 
-    fixed_code = llm.generate(prompt, partial_assistant_response='<debugging_process>')
+    fixed_code = llm.generate(prompt, respond_prefix='<debugging_process>')
     print(fixed_code)
     graph.update(node_id, prompt=prompt, response=fixed_code, status="RETRIED")
     return node_id
