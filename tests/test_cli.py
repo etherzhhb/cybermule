@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 from cybermule.cli.main import app
 
@@ -26,3 +26,29 @@ def test_review_commit_mock_llm(monkeypatch):
         # The mock llm should echo the title and the diff which should be a part of the prompt
         assert "Fix bug in handler" in result.output
         assert "diff --git a/app.py b/app.py" in result.output
+
+def test_refactor_preview(tmp_path):
+    file_to_refactor = tmp_path / "example.py"
+    file_to_refactor.write_text("print('hello')\n")
+
+    # Create a fake refactoring response with a code block
+    fake_response = "```python\nprint('refactored')\n```"
+
+    with patch("cybermule.commands.refactor.get_llm_provider") as mock_get_llm:
+        mock_llm = MagicMock()
+        mock_llm.generate.return_value = fake_response
+        mock_get_llm.return_value = mock_llm
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "--config=config.test.yaml",
+            "refactor",
+            str(file_to_refactor),
+            "--goal=rename print statement",
+            "--preview"
+        ])
+
+    assert result.exit_code == 0
+    assert "-print('hello')" in result.output
+    assert "+print('refactored')" in result.output
+    
