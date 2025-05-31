@@ -17,9 +17,9 @@ def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str,
     prompt_path = Path(__file__).parent.parent / get_prompt_path(config, name="fix_code_error.j2")
 
     prompt = render_template(prompt_path, {
-        "PYTHON_CODE": parent_node["generated_code"],
+        "PYTHON_CODE_PROMPT": parent_node["prompt"],
+        "PYTHON_CODE_RESPONSE": parent_node["response"],
         "CODE_DIFF": parent_node.get("diff", ""),
-        "CONTEXT_CODE": parent_node.get("context_code", ""),
         "PYTEST_RESULT": test_error,
     })
 
@@ -28,6 +28,7 @@ def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str,
 
     llm = get_llm_provider(config)
 
-    fixed_code = llm.generate(prompt)
+    fixed_code = llm.generate(prompt, partial_assistant_response='<debugging_process>')
+    print(fixed_code)
     graph.update(node_id, prompt=prompt, response=fixed_code, status="RETRIED")
     return node_id

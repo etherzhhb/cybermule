@@ -47,7 +47,7 @@ def execute(
     if context:
         context_files = resolve_context_inputs(context)
         context_parts = [
-            f"# File: {cf.name}\n{read_file_content(cf)}" for cf in context_files
+            f"# File: {cf}\n{read_file_content(cf)}" for cf in context_files
         ]
         context_code = "\n\n".join(context_parts)
 
@@ -84,7 +84,7 @@ def execute(
     else:
         file.write_text(refactored_code)
         status="REFACTORED"
-
+  
     local_graph.update(node_id, prompt=prompt, response=response,
                        original_code=file_text, context_code=context_code,
                        generated_code=refactored_code, diff=diff_txt,
