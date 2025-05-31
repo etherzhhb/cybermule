@@ -87,3 +87,16 @@ def test_get_leaves_and_roots(temp_graph_file):
     leaf_ids = [n["id"] for n in leaves]
     assert leaf1 in leaf_ids
     assert leaf2 in leaf_ids
+
+def test_empty_file_loading(temp_graph_file):
+    """Test that loading from an empty file doesn't cause errors."""
+    # Create empty file
+    with open(temp_graph_file, 'w') as f:
+        pass  # Create empty file
+    
+    # Verify file is empty
+    from pathlib import Path
+    assert Path(temp_graph_file).stat().st_size == 0
+    
+    # Should not raise any exceptions when loading from empty file
+    mg = MemoryGraph(storage_path=temp_graph_file)
