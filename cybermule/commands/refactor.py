@@ -3,6 +3,7 @@ from pathlib import Path
 import difflib
 import jinja2
 from markdown_it import MarkdownIt
+from typing import List, Optional
 
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
@@ -25,22 +26,59 @@ def render_template(template_path: Path, template_vars: dict) -> str:
     template = env.get_template(template_path.name)
     return template.render(**template_vars)
 
+def read_file_content(file_path: Path) -> str:
+    """
+    Read content from a file.
+    
+    Args:
+        file_path: Path to the file to read
+        
+    Returns:
+        Content of the file as a string
+    """
+    try:
+        return file_path.read_text()
+    except Exception as e:
+        typer.echo(f"Error reading file {file_path}: {e}", err=True)
+        return ""
+
 def run(
     ctx: typer.Context,
     file: Path = typer.Argument(..., exists=True, help="Path to the file to refactor"),
     goal: str = typer.Option(..., help="Refactoring goal, e.g., 'extract class', 'rename variable'"),
     preview: bool = typer.Option(False, help="Show diff instead of applying changes"),
+    context_files: Optional[List[Path]] = typer.Option(
+        None, 
+        "--context", 
+        "-c", 
+        help="Additional files to provide context for refactoring",
+        exists=True
+    ),
 ):    
     config = ctx.obj["config"]
 
     typer.echo(f"🛠️  Refactoring {file} with goal: '{goal}'")
-    file_text = file.read_text()
+    file_text = read_file_content(file)
+    
+    # Process context files if provided
+    context_code = ""
+    if context_files:
+        context_parts = []
+        for context_file in context_files:
+            content = read_file_content(context_file)
+            if content:
+                context_parts.append(f"# File: {context_file.name}\n{content}")
+        
+        if context_parts:
+            context_code = "\n\n".join(context_parts)
+            typer.echo(f"📚 Added {len(context_files)} context file(s)")
 
     # Load and render the template
     prompt_path = Path(__file__).parent.parent / get_prompt_path(config, name="refactor.j2")
     template_vars = {
         "PYTHON_CODE": file_text,
-        "REFACTORING_GOAL": goal
+        "REFACTORING_GOAL": goal,
+        "CONTEXT_CODE": context_code
     }
     prompt = render_template(prompt_path, template_vars)
 
