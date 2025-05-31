@@ -7,40 +7,7 @@ from typing import List, Optional
 
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
-
-def render_template(template_path: Path, template_vars: dict) -> str:
-    """
-    Load and render a Jinja2 template with the provided variables.
-    
-    Args:
-        template_path: Path to the template file
-        template_vars: Dictionary of variables to render in the template
-        
-    Returns:
-        Rendered template as a string
-    """
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(template_path.parent),
-        autoescape=jinja2.select_autoescape()
-    )
-    template = env.get_template(template_path.name)
-    return template.render(**template_vars)
-
-def read_file_content(file_path: Path) -> str:
-    """
-    Read content from a file.
-    
-    Args:
-        file_path: Path to the file to read
-        
-    Returns:
-        Content of the file as a string
-    """
-    try:
-        return file_path.read_text()
-    except Exception as e:
-        typer.echo(f"Error reading file {file_path}: {e}", err=True)
-        return ""
+from cybermule.utils.file_utils import read_file_content
 
 def run(
     ctx: typer.Context,
