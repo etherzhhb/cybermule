@@ -2,6 +2,7 @@ import os
 import tempfile
 import pytest
 from cybermule.memory.memory_graph import MemoryGraph
+from cybermule.memory.history_utils import extract_chat_history
 
 @pytest.fixture
 def temp_graph_file():
@@ -89,7 +90,6 @@ def test_get_leaves_and_roots(temp_graph_file):
     assert leaf2 in leaf_ids
 
 def test_new_node_metadata(temp_graph_file):
-    from datetime import datetime
     mg = MemoryGraph(storage_path=temp_graph_file)
     node_id = mg.new("Task", tags=["test", "debug"], mode="planner-loop")
     node = mg.get(node_id)
@@ -97,3 +97,36 @@ def test_new_node_metadata(temp_graph_file):
     assert "T" in node["timestamp"] and node["timestamp"].endswith("Z")
     assert node["tags"] == ["test", "debug"]
     assert node["mode"] == "planner-loop"
+
+def test_extract_chat_history_from_memory_graph(temp_graph_file):
+    mg = MemoryGraph(storage_path=temp_graph_file)
+
+    # Create a 3-node ancestry chain: root → mid → leaf
+    root_id = mg.new("Root")
+    mg.update(root_id, prompt="prompt 1", response="response 1")
+
+    mid_id = mg.new("Mid", parent_id=root_id)
+    mg.update(mid_id, prompt="prompt 2", response="response 2")
+
+    leaf_id = mg.new("Leaf", parent_id=mid_id)
+    mg.update(leaf_id, prompt="prompt 3", response="response 3")
+
+    # --- Case 1: include_root=True
+    history = extract_chat_history(leaf_id, mg, include_root=True)
+
+    assert len(history) == 6
+    assert history[0]["role"] == "user" and history[0]["content"][0]["text"] == "prompt 1"
+    assert history[1]["role"] == "assistant" and history[1]["content"][0]["text"] == "response 1"
+    assert history[-1]["content"][0]["text"] == "response 3"
+
+    # --- Case 2: include_root=False
+    history_without_leaf = extract_chat_history(leaf_id, mg, include_root=False)
+
+    assert len(history_without_leaf) == 4
+    assert history_without_leaf[-1]["content"][0]["text"] == "response 2"
+
+    # --- Case 3: skip nodes with empty prompt/response
+    empty_id = mg.new("Empty", parent_id=leaf_id)  # no update → no prompt/response
+    history_with_empty = extract_chat_history(empty_id, mg, include_root=True)
+
+    assert len(history_with_empty) == 6  # Empty node adds nothing
