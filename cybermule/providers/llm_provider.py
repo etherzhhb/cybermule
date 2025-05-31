@@ -9,8 +9,13 @@ class LLMProvider:
         self.cache_path = Path(cache_path).expanduser()
         self.cache = self._load_cache()
 
-    def _hash_prompt(self, prompt: str) -> str:
-        return hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+    def _hash_prompt(self, prompt: str, respond_prefix: str, history: tuple[str, ...]) -> str:
+        key_material = json.dumps({
+            "prompt": prompt,
+            "respond_prefix": respond_prefix,
+            "history": history,
+        }, sort_keys=True)
+        return hashlib.sha256(key_material.encode('utf-8')).hexdigest()
 
     def _load_cache(self):
         try:
@@ -23,18 +28,17 @@ class LLMProvider:
         with open(self.cache_path, 'w') as f:
             json.dump(self.cache, f, indent=2)
 
-    def generate(self, prompt: str, respond_prefix: str = '') -> str:
-        key = self._hash_prompt(prompt)
+    def generate(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
+        key = self._hash_prompt(prompt, respond_prefix, history)
         if key in self.cache:
             return self.cache[key]
 
-        response = self.generate_impl(
-          prompt, respond_prefix=respond_prefix)
+        response = self.generate_impl(prompt, respond_prefix=respond_prefix, history=history)
         self.cache[key] = response
         self._save_cache()
         return response
-    
-    def generate_impl(self, prompt: str, respond_prefix: str = '') -> str:
+
+    def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
         raise NotImplementedError
 
 
@@ -53,25 +57,25 @@ class ClaudeBaseProvider(LLMProvider):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.system_prompt = system_prompt
-        
-    def _format_messages(self, prompt: str) -> List[Dict[str, Any]]:
+
+    def _format_messages(self, prompt: str, history: tuple[str, ...]) -> List[Dict[str, Any]]:
         messages = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
+
+        roles = ["user", "assistant"]
+        for i, msg in enumerate(history):
+            messages.append({"role": roles[i % 2], "content": [{"type": "text", "text": msg}]})
+
         messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
         return messages
-        
-    def generate_impl(self, prompt: str, respond_prefix: str = '') -> str:
-        messages = self._format_messages(prompt)
+
+    def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
+        messages = self._format_messages(prompt, history)
         if respond_prefix:
-            messages.append({"role": "assistant", "content": [
-                {
-                    "type": "text",
-                    "text": respond_prefix
-                }
-            ]})
+            messages.append({"role": "assistant", "content": [{"type": "text", "text": respond_prefix}]})
         return self._call_api(messages)
-        
+
     def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         raise NotImplementedError
 
@@ -126,7 +130,7 @@ class OllamaProvider(LLMProvider):
         from langchain_ollama import OllamaLLM
         self.llm = OllamaLLM(model=model_id, base_url=base_url)
 
-    def generate_impl(self, prompt: str, respond_prefix: str = '') -> str:
+    def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
         return self.llm.invoke(prompt)
 
 
@@ -136,8 +140,9 @@ class MockLLMProvider(LLMProvider):
         super().__init__(**kwargs)
         self.model_id = model_id or "mock"
 
-    def generate(self, prompt: str, respond_prefix: str = '') -> str:
-        return f"[MOCKED] Response to: {prompt}"
+    def generate(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
+        parts = list(history) + [prompt]
+        return f"[MOCKED] Response to: {' | '.join(parts)}"
 
 
 # === Optional Factory === #
