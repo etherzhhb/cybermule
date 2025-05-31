@@ -1,5 +1,5 @@
 import typer
-from cybermule.tools.memory_graph import MemoryGraph
+from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.executors import run_codegen, run_tests, fix_errors, suggest_tests
 
 def run(task: str = typer.Argument(..., help="Describe the software task"),
