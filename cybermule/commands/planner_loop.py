@@ -1,5 +1,5 @@
 import typer
-from cybermule.tools.memory_graph import MemoryGraph
+from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate

@@ -1,7 +1,7 @@
 import os
 import tempfile
 import pytest
-from cybermule.tools.memory_graph import MemoryGraph
+from cybermule.memory.memory_graph import MemoryGraph
 
 @pytest.fixture
 def temp_graph_file():

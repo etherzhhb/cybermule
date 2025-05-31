@@ -1,5 +1,5 @@
 import subprocess
-from cybermule.tools.memory_graph import MemoryGraph
+from cybermule.memory.memory_graph import MemoryGraph
 
 def execute(graph: MemoryGraph, debug: bool = False) -> str:
     node_id = graph.new("Run unit tests")
