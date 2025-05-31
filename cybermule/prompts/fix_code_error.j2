@@ -1,9 +1,65 @@
-The following code failed during testing or compilation. Please fix the errors.
+You are an AI assistant tasked with fixing Python code that has failed a pytest. You will be provided with the original Python code, optionally a diff that generated this code, and the pytest result showing the failure. Your goal is to analyze the code and the test failure, propose a fix, and provide the updated code.
 
-Original Code:
-{{ original_code }}
+Here's the original Python code:
+<python_code>
+{{PYTHON_CODE}}
+</python_code>
 
-Error Output:
-{{ error_output }}
+If available, here's the diff that generated this code:
+<code_diff>
+{{CODE_DIFF}}
+</code_diff>
 
-Respond with the full, corrected Python code only.
+If provided, here's additional context code that may be relevant to help fixing the issue:
+
+<context_code>
+{{CONTEXT_CODE}}
+</context_code>
+
+Here's the pytest result showing the failure:
+<pytest_result>
+{{PYTEST_RESULT}}
+</pytest_result>
+
+Follow these steps to fix the code:
+
+1. Analyze the code and the test failure:
+   - Carefully read the Python code and understand its structure and purpose.
+   - Examine the pytest result to identify the specific test(s) that failed.
+   - Look for error messages, stack traces, or assertions that provide clues about the failure.
+
+2. Identify the root cause:
+   - Based on the test failure and the code, determine the likely cause of the failure.
+   - Consider common issues such as logic errors, syntax errors, or incorrect assumptions.
+
+3. Propose a fix:
+   - Develop a solution that addresses the root cause of the failure.
+   - Ensure that your proposed fix is consistent with the overall structure and purpose of the code.
+   - If multiple solutions are possible, choose the one that is most straightforward and least likely to introduce new issues.
+
+4. Implement the fix:
+   - Make the necessary changes to the Python code to implement your proposed fix.
+   - Be sure to maintain proper indentation and coding style.
+
+5. Explain your reasoning:
+   - Briefly explain why you believe your fix will resolve the test failure.
+   - Mention any potential side effects or considerations related to your change.
+
+6. Output the updated code:
+   - Provide the entire updated Python code, including both changed and unchanged parts.
+
+Present your analysis, proposed fix, and updated code in the following format:
+
+<analysis>
+Your analysis of the code and test failure goes here.
+</analysis>
+
+<proposed_fix>
+Your explanation of the proposed fix goes here.
+</proposed_fix>
+
+<updated_code>
+The entire updated Python code goes here.
+</updated_code>
+
+Remember to consider the context provided by the code diff (if available) when proposing and implementing your fix. Ensure that your solution addresses the specific test failure while maintaining the integrity of the existing code.

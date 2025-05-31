@@ -5,7 +5,7 @@ import typer
 import logging
 import yaml
 
-from cybermule.commands import generate, review_commit, history, show_log, filter, refactor
+from cybermule.commands import generate, review_commit, history, show_log, filter, refactor, smart_thread
 
 app = typer.Typer()
 
@@ -57,6 +57,7 @@ app.command("history")(history.run)
 app.command("show-log")(show_log.run)
 app.command("filter")(filter.run)
 app.command("refactor")(refactor.run)
+app.command("smart_thread")(smart_thread.run)
 
 # Lazily import check-llm command
 def lazy_command(module: str, attr: str = "run"):

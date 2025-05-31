@@ -151,11 +151,12 @@ LLM_REGISTRY = {
 
 def get_llm_provider(config) -> LLMProvider:
     llm_cfg = config.get("llm", {})
-    name = llm_cfg.pop("provider", None)
+    name = llm_cfg.get("provider", None)
     if not name:
         raise ValueError("'provider' must be specified in llm config")
 
     if name not in LLM_REGISTRY:
         raise ValueError(f"Unknown LLM provider: {name}")
 
-    return LLM_REGISTRY[name](**llm_cfg)
+    provider_kwargs = {k: v for k, v in llm_cfg.items() if k != "provider"}
+    return LLM_REGISTRY[name](**provider_kwargs)

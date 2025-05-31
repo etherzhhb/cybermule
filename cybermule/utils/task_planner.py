@@ -2,6 +2,7 @@
 
 import typer
 from pathlib import Path
+import re
 
 
 def ask_for_context() -> list[str]:
@@ -57,3 +58,36 @@ def plan_generate_or_refactor() -> dict:
         raise typer.Exit()
 
     return plan
+
+
+def parse_natural_task_string(task: str) -> dict:
+    """
+    Parses a natural language task string like:
+    "refactor path/to/file.py to do something with context path/a path/b"
+    """
+    mode_match = re.match(r"^(generate|refactor)\b", task)
+    if not mode_match:
+        raise ValueError("Task must start with 'generate' or 'refactor'")
+    mode = mode_match.group(1)
+
+    # Extract file path (assumes after the mode)
+    file_match = re.search(rf"{mode}\s+([^\s]+\.py)", task)
+    if not file_match:
+        raise ValueError("Could not find a valid .py file path")
+    file_path = Path(file_match.group(1))
+
+    # Extract context (optional)
+    context_match = re.search(r"with context\s+(.+)", task)
+    context = context_match.group(1).split() if context_match else []
+
+    # Extract goal (between file and context or end)
+    goal_start = file_match.end()
+    goal_end = context_match.start() if context_match else len(task)
+    goal = task[goal_start:goal_end].replace("to", "", 1).strip()
+
+    return {
+        "mode": mode,
+        "goal": goal,
+        "file": file_path,
+        "context": context
+    }
