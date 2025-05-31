@@ -87,3 +87,13 @@ def test_get_leaves_and_roots(temp_graph_file):
     leaf_ids = [n["id"] for n in leaves]
     assert leaf1 in leaf_ids
     assert leaf2 in leaf_ids
+
+def test_new_node_metadata(temp_graph_file):
+    from datetime import datetime
+    mg = MemoryGraph(storage_path=temp_graph_file)
+    node_id = mg.new("Task", tags=["test", "debug"], mode="planner-loop")
+    node = mg.get(node_id)
+    assert "timestamp" in node
+    assert "T" in node["timestamp"] and node["timestamp"].endswith("Z")
+    assert node["tags"] == ["test", "debug"]
+    assert node["mode"] == "planner-loop"
