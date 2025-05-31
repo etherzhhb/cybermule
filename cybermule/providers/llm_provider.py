@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from typing import NamedTuple, Optional, Dict, Any, List, Tuple
 
+import typer
+
 # -------------------------------
 # Named result for consistent returns
 # -------------------------------
@@ -13,12 +15,13 @@ class LLMResult(NamedTuple):
 
 # === Unified Interface === #
 class LLMProvider:
-    def __init__(self, cache_path: str = ".llm_cache.json"):
+    def __init__(self, cache_path: str = ".llm_cache.json", show_token_summary=True):
         self.cache_path = Path(cache_path).expanduser()
         self.cache = self._load_cache()
         self.input_tokens = 0
         self.output_tokens = 0
         self.total_calls = 0
+        self.show_token_summary = show_token_summary
 
     def _hash_prompt(
         self,
@@ -94,6 +97,10 @@ class LLMProvider:
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
         self.total_calls += 1
+        
+        # Print token summary with $ emoji if enabled
+        if self.show_token_summary:
+            typer.echo(f"$ Token Summary: {self.token_summary}")
 
     @property
     def token_summary(self) -> dict:
