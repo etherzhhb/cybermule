@@ -63,7 +63,7 @@ def execute(
         print("\n--- Refactor Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider(config)
-    response = llm.generate(prompt, partial_assistant_response="<refactoring_analysis>")
+    response = llm.generate(prompt, respond_prefix="<refactoring_analysis>")
     refactored_code = extract_code_blocks(response)[0] if extract_code_blocks(response) else ""
 
     if debug_prompt:

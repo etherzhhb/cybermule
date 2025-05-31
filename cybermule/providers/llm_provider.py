@@ -23,18 +23,18 @@ class LLMProvider:
         with open(self.cache_path, 'w') as f:
             json.dump(self.cache, f, indent=2)
 
-    def generate(self, prompt: str, partial_assistant_response: str = '') -> str:
+    def generate(self, prompt: str, respond_prefix: str = '') -> str:
         key = self._hash_prompt(prompt)
         if key in self.cache:
             return self.cache[key]
 
         response = self.generate_impl(
-          prompt, partial_assistant_response=partial_assistant_response)
+          prompt, respond_prefix=respond_prefix)
         self.cache[key] = response
         self._save_cache()
         return response
     
-    def generate_impl(self, prompt: str, partial_assistant_response: str = '') -> str:
+    def generate_impl(self, prompt: str, respond_prefix: str = '') -> str:
         raise NotImplementedError
 
 
@@ -61,13 +61,13 @@ class ClaudeBaseProvider(LLMProvider):
         messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
         return messages
         
-    def generate_impl(self, prompt: str, partial_assistant_response: str = '') -> str:
+    def generate_impl(self, prompt: str, respond_prefix: str = '') -> str:
         messages = self._format_messages(prompt)
-        if partial_assistant_response:
+        if respond_prefix:
             messages.append({"role": "assistant", "content": [
                 {
                     "type": "text",
-                    "text": partial_assistant_response
+                    "text": respond_prefix
                 }
             ]})
         return self._call_api(messages)
@@ -126,7 +126,7 @@ class OllamaProvider(LLMProvider):
         from langchain_ollama import OllamaLLM
         self.llm = OllamaLLM(model=model_id, base_url=base_url)
 
-    def generate_impl(self, prompt: str, partial_assistant_response: str = '') -> str:
+    def generate_impl(self, prompt: str, respond_prefix: str = '') -> str:
         return self.llm.invoke(prompt)
 
 
@@ -136,7 +136,7 @@ class MockLLMProvider(LLMProvider):
         super().__init__(**kwargs)
         self.model_id = model_id or "mock"
 
-    def generate(self, prompt: str, partial_assistant_response: str = '') -> str:
+    def generate(self, prompt: str, respond_prefix: str = '') -> str:
         return f"[MOCKED] Response to: {prompt}"
 
 
