@@ -1,54 +1,59 @@
-You are an AI assistant tasked with fixing Python code that has failed a pytest. You will be provided with the original Python code, optionally a diff that generated this code, and the pytest result showing the failure. Your goal is to analyze the code and the test failure, propose a fix, and provide the updated code.
+You are an AI assistant specialized in fixing Python code that has failed a pytest. Your task is to analyze the code and test failure, identify the root cause, propose and implement a fix, and provide the updated code.
 
-Here's the original Python code:
-<python_code>
-{{PYTHON_CODE}}
-</python_code>
+First, let's review the inputs:
 
-If available, here's the diff that generated this code:
-<code_diff>
-{{CODE_DIFF}}
-</code_diff>
-
-If provided, here's additional context code that may be relevant to help fixing the issue:
-
-<context_code>
-{{CONTEXT_CODE}}
-</context_code>
-
-Here's the pytest result showing the failure:
+1. The pytest result showing the failure:
 <pytest_result>
 {{PYTEST_RESULT}}
 </pytest_result>
 
-Follow these steps to fix the code:
+2. The original Python code, which is generated from the following prompt and response:
+<original_code_generation>
+Prompt: {{PYTHON_CODE_PROMPT}}
+Response: {{PYTHON_CODE_RESPONSE}}
+</original_code_generation>
+
+3. The code diff that generated this code (if available):
+<code_diff>
+{{CODE_DIFF}}
+</code_diff>
+
+Please follow these steps to fix the code:
 
 1. Analyze the code and the test failure:
-   - Carefully read the Python code and understand its structure and purpose.
-   - Examine the pytest result to identify the specific test(s) that failed.
+   - Carefully read the pytest result to identify the specific test(s) that failed.
    - Look for error messages, stack traces, or assertions that provide clues about the failure.
+   - Examine the Python code generated from the prompt and response.
+   - If available, compare the original code with the code diff to identify recent changes.
+   - Check for common Python errors and pytest-specific issues.
 
 2. Identify the root cause:
-   - Based on the test failure and the code, determine the likely cause of the failure.
+   - Based on the test failure and the code analysis, determine the likely cause of the failure.
    - Consider common issues such as logic errors, syntax errors, or incorrect assumptions.
+   - Look for discrepancies between the code's intended behavior and the actual behavior.
 
 3. Propose a fix:
    - Develop a solution that addresses the root cause of the failure.
    - Ensure that your proposed fix is consistent with the overall structure and purpose of the code.
    - If multiple solutions are possible, choose the one that is most straightforward and least likely to introduce new issues.
+   - Consider how the fix aligns with any recent changes shown in the code diff (if available).
 
 4. Implement the fix:
    - Make the necessary changes to the Python code to implement your proposed fix.
    - Be sure to maintain proper indentation and coding style.
+   - Double-check that your implementation addresses all aspects of the identified issue.
 
 5. Explain your reasoning:
    - Briefly explain why you believe your fix will resolve the test failure.
    - Mention any potential side effects or considerations related to your change.
+   - Discuss how your fix relates to the original code and any recent changes (if applicable).
 
 6. Output the updated code:
    - Provide the entire updated Python code, including both changed and unchanged parts.
 
-Present your analysis, proposed fix, and updated code in the following format:
+Before providing your final output, wrap your thought process for each step in <debugging_process> tags. This will help ensure a thorough analysis and solution.
+
+Present your final output in the following format:
 
 <analysis>
 Your analysis of the code and test failure goes here.
@@ -63,3 +68,34 @@ The entire updated Python code goes here.
 </updated_code>
 
 Remember to consider the context provided by the code diff (if available) when proposing and implementing your fix. Ensure that your solution addresses the specific test failure while maintaining the integrity of the existing code.
+
+Example output structure (do not use this content, it's just to illustrate the format):
+
+<debugging_process>
+Step 1: Analysis
+[Your thought process for analyzing the code and test failure]
+
+Step 2: Root Cause Identification
+[Your thought process for identifying the root cause]
+
+Step 3: Fix Proposal
+[Your thought process for proposing a fix]
+
+Step 4: Fix Implementation
+[Your thought process for implementing the fix]
+
+Step 5: Reasoning Explanation
+[Your thought process for explaining the reasoning behind the fix]
+</debugging_process>
+
+<analysis>
+[Your analysis of the code and test failure]
+</analysis>
+
+<proposed_fix>
+[Your explanation of the proposed fix]
+</proposed_fix>
+
+<updated_code>
+[The entire updated Python code]
+</updated_code>
