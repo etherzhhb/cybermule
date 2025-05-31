@@ -13,6 +13,7 @@ dependencies = [
     "faiss-cpu",
     "pyyaml",
     "markdown-it-py",
+    "jinja2",
 ]
 
 [project.scripts]
