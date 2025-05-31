@@ -1,7 +1,8 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
+
 
 # === Unified Interface === #
 class LLMProvider:
@@ -9,46 +10,83 @@ class LLMProvider:
         self.cache_path = Path(cache_path).expanduser()
         self.cache = self._load_cache()
 
-    def _hash_prompt(self, prompt: str, respond_prefix: str, history: tuple[str, ...]) -> str:
+    def _hash_prompt(
+        self,
+        prompt: str,
+        respond_prefix: str,
+        history: Tuple[Dict[str, Any], ...]
+    ) -> str:
         key_material = json.dumps({
             "prompt": prompt,
             "respond_prefix": respond_prefix,
             "history": history,
         }, sort_keys=True)
-        return hashlib.sha256(key_material.encode('utf-8')).hexdigest()
+        return hashlib.sha256(key_material.encode("utf-8")).hexdigest()
 
-    def _load_cache(self):
+    def _load_cache(self) -> Dict[str, str]:
         try:
-            with open(self.cache_path, 'r') as f:
+            with open(self.cache_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
             return {}
 
     def _save_cache(self):
-        with open(self.cache_path, 'w') as f:
+        with open(self.cache_path, "w", encoding="utf-8") as f:
             json.dump(self.cache, f, indent=2)
 
-    def generate(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
+    def _build_messages(
+        self,
+        prompt: str,
+        respond_prefix: str = '',
+        history: Tuple[Dict[str, Any], ...] = (),
+        system_prompt: str = ''
+    ) -> List[Dict[str, Any]]:
+        messages = list(history)
+
+        if system_prompt:
+            messages = [{"role": "system", "content": system_prompt}] + messages
+
+        messages.append({
+            "role": "user",
+            "content": [{"type": "text", "text": prompt}]
+        })
+
+        if respond_prefix:
+            messages.append({
+                "role": "assistant",
+                "content": [{"type": "text", "text": respond_prefix}]
+            })
+
+        return messages
+
+    def generate(
+        self,
+        prompt: str,
+        respond_prefix: str = '',
+        history: Tuple[Dict[str, Any], ...] = ()
+    ) -> str:
         key = self._hash_prompt(prompt, respond_prefix, history)
         if key in self.cache:
             return self.cache[key]
 
-        response = self.generate_impl(prompt, respond_prefix=respond_prefix, history=history)
+        messages = self._build_messages(prompt, respond_prefix, history)
+        response = self._call_api(messages)
+
         self.cache[key] = response
         self._save_cache()
         return response
 
-    def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
+    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         raise NotImplementedError
 
 
 # === Claude Base Implementation === #
 class ClaudeBaseProvider(LLMProvider):
     def __init__(
-        self, 
-        model_id: str, 
-        temperature: float = 0.7, 
-        max_tokens: int = 20000, 
+        self,
+        model_id: str,
+        temperature: float = 0.7,
+        max_tokens: int = 20000,
         system_prompt: str = '',
         **kwargs
     ):
@@ -57,24 +95,6 @@ class ClaudeBaseProvider(LLMProvider):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.system_prompt = system_prompt
-
-    def _format_messages(self, prompt: str, history: tuple[str, ...]) -> List[Dict[str, Any]]:
-        messages = []
-        if self.system_prompt:
-            messages.append({"role": "system", "content": self.system_prompt})
-
-        roles = ["user", "assistant"]
-        for i, msg in enumerate(history):
-            messages.append({"role": roles[i % 2], "content": [{"type": "text", "text": msg}]})
-
-        messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
-        return messages
-
-    def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
-        messages = self._format_messages(prompt, history)
-        if respond_prefix:
-            messages.append({"role": "assistant", "content": [{"type": "text", "text": respond_prefix}]})
-        return self._call_api(messages)
 
     def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         raise NotImplementedError
@@ -123,26 +143,24 @@ class ClaudeDirectProvider(ClaudeBaseProvider):
         return message.content[0].text
 
 
-# === OllamaLLM Implementation === #
+# === Ollama Implementation === #
 class OllamaProvider(LLMProvider):
     def __init__(self, model_id: str, base_url=None, **kwargs):
         super().__init__(**kwargs)
         from langchain_ollama import OllamaLLM
         self.llm = OllamaLLM(model=model_id, base_url=base_url)
 
-    def _format_flat_prompt(self, prompt: str, history: tuple[str, ...]) -> str:
-        roles = ["User", "Assistant"]
-        parts = []
-        for i, msg in enumerate(history):
-            role = roles[i % 2]
-            parts.append(f"{role}: {msg}")
-        parts.append(f"User: {prompt}")
-        parts.append("Assistant:")
-        return "\n".join(parts)
-
-    def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
-        flat_prompt = self._format_flat_prompt(prompt, history)
+    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+        flat_prompt = self._flatten_messages(messages)
         return self.llm.invoke(flat_prompt)
+
+    def _flatten_messages(self, messages: List[Dict[str, Any]]) -> str:
+        parts = []
+        for m in messages:
+            role = m.get("role", "user").capitalize()
+            content = "".join(chunk["text"] for chunk in m["content"] if chunk["type"] == "text")
+            parts.append(f"{role}: {content}")
+        return "\n".join(parts)
 
 
 # === Mock Implementation for Testing === #
@@ -151,8 +169,12 @@ class MockLLMProvider(LLMProvider):
         super().__init__(**kwargs)
         self.model_id = model_id or "mock"
 
-    def generate(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
-        parts = list(history) + [prompt]
+    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+        parts = []
+        for m in messages:
+            role = m.get("role", "user").capitalize()
+            content = "".join(chunk["text"] for chunk in m["content"] if chunk["type"] == "text")
+            parts.append(f"{role}: {content}")
         return f"[MOCKED] Response to: {' | '.join(parts)}"
 
 

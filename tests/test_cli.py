@@ -12,7 +12,7 @@ def test_cli_help():
 def test_check_mock_llm():
     result = CliRunner().invoke(app, ["--config=config.test.yaml", "check-llm"])
     assert result.exit_code == 0
-    assert "Model response: [MOCKED] Response to: Say hello" in result.output
+    assert "Model response: [MOCKED] Response to: User: Say hello" in result.output
 
 
 def test_review_commit_mock_llm(monkeypatch):
