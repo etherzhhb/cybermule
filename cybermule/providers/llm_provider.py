@@ -130,8 +130,19 @@ class OllamaProvider(LLMProvider):
         from langchain_ollama import OllamaLLM
         self.llm = OllamaLLM(model=model_id, base_url=base_url)
 
+    def _format_flat_prompt(self, prompt: str, history: tuple[str, ...]) -> str:
+        roles = ["User", "Assistant"]
+        parts = []
+        for i, msg in enumerate(history):
+            role = roles[i % 2]
+            parts.append(f"{role}: {msg}")
+        parts.append(f"User: {prompt}")
+        parts.append("Assistant:")
+        return "\n".join(parts)
+
     def generate_impl(self, prompt: str, respond_prefix: str = '', history: tuple[str, ...] = ()) -> str:
-        return self.llm.invoke(prompt)
+        flat_prompt = self._format_flat_prompt(prompt, history)
+        return self.llm.invoke(flat_prompt)
 
 
 # === Mock Implementation for Testing === #
