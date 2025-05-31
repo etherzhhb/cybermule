@@ -1,13 +1,12 @@
 import typer
 from pathlib import Path
 import difflib
-import jinja2
 from markdown_it import MarkdownIt
 from typing import List, Optional
 
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
-from cybermule.utils.file_utils import read_file_content
+from cybermule.utils.file_utils import read_file_content, resolve_context_inputs
 from cybermule.utils.template_utils import render_template
 
 def run(
@@ -15,28 +14,26 @@ def run(
     file: Path = typer.Argument(..., exists=True, help="Path to the file to refactor"),
     goal: str = typer.Option(..., help="Refactoring goal, e.g., 'extract class', 'rename variable'"),
     preview: bool = typer.Option(False, help="Show diff instead of applying changes"),
-    context_files: Optional[List[Path]] = typer.Option(
-        None, 
-        "--context", 
-        "-c", 
-        help="Additional files to provide context for refactoring",
-        exists=True
+    context: Optional[List[str]] = typer.Option(
+        None,
+        "--context", "-c",
+        help="Paths, directories, or glob patterns for files to provide context. Accepts globs and folders.",
     ),
-):    
+):
     config = ctx.obj["config"]
 
     typer.echo(f"🛠️  Refactoring {file} with goal: '{goal}'")
     file_text = read_file_content(file)
-    
-    # Process context files if provided
+
+    # Resolve and process context files
     context_code = ""
-    if context_files:
+    if context:
+        context_files = resolve_context_inputs(context)
         context_parts = []
         for context_file in context_files:
             content = read_file_content(context_file)
             if content:
                 context_parts.append(f"# File: {context_file.name}\n{content}")
-        
         if context_parts:
             context_code = "\n\n".join(context_parts)
             typer.echo(f"📚 Added {len(context_files)} context file(s)")
