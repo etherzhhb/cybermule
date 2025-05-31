@@ -2,23 +2,11 @@ from pathlib import Path
 import sys
 import types
 from unittest.mock import MagicMock, patch
-from cybermule.providers.llm_provider import (
-    LLMProvider,
-    MockLLMProvider,
-)
-
-class CountingMockLLMProvider(MockLLMProvider):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.call_count = 0
-
-    def _call_api(self, messages):
-        self.call_count += 1
-        return super()._call_api(messages)
+from cybermule.providers.llm_provider import LLMResult, MockLLMProvider
 
 
 def test_build_messages_basic():
-    llm = LLMProvider()
+    llm = MockLLMProvider()
 
     prompt = "What is the capital of France?"
     history = (
@@ -38,7 +26,7 @@ def test_build_messages_basic():
 
 def test_generate_and_cache_with_mock(tmp_path: Path):
     cache_path = tmp_path / "mock_cache.json"
-    llm = CountingMockLLMProvider(cache_path=str(cache_path))
+    llm = MockLLMProvider(cache_path=str(cache_path))
 
     prompt = "What is 2 + 2?"
     history = (
@@ -48,11 +36,11 @@ def test_generate_and_cache_with_mock(tmp_path: Path):
 
     # First call — should trigger _call_api
     response1 = llm.generate(prompt, history=history)
-    assert llm.call_count == 1
+    assert llm.total_calls == 1
 
     # Second call — should come from cache
     response2 = llm.generate(prompt, history=history)
-    assert llm.call_count == 1  # Still 1 → no new API call
+    assert llm.total_calls == 1  # Still 1 → no new API call
 
     assert response1 == response2
     assert cache_path.exists()
@@ -63,7 +51,9 @@ def test_claude_direct_provider_mocked(tmp_path):
     fake_module = types.ModuleType("anthropic")
     mock_client_class = MagicMock()
     mock_client_instance = mock_client_class.return_value
-    mock_client_instance.messages.create.return_value.content = [MagicMock(text="[MOCKED CLAUDE]")]
+    mock_client_instance.messages.create.return_value.content = [
+        MagicMock(text="[MOCKED CLAUDE]")
+    ]
     fake_module.Anthropic = mock_client_class
     sys.modules["anthropic"] = fake_module
 
@@ -75,6 +65,7 @@ def test_claude_direct_provider_mocked(tmp_path):
         ]
 
         from cybermule.providers.llm_provider import ClaudeDirectProvider
+
         provider = ClaudeDirectProvider(
             api_key="fake",
             model_id="claude-3-sonnet",
@@ -91,7 +82,11 @@ def test_claude_direct_provider_mocked(tmp_path):
         )
 
         with patch.object(
-            ClaudeDirectProvider, "_call_api", return_value="[MOCKED CLAUDE]"
+            ClaudeDirectProvider,
+            "_call_api",
+            return_value=LLMResult(
+                text="[MOCKED CLAUDE]", input_tokens=0, output_tokens=0
+            ),
         ) as mock_call:
             response = provider.generate(prompt, history=history)
 
@@ -136,7 +131,11 @@ def test_ollama_provider_mocked(tmp_path):
         )
 
         with patch.object(
-            OllamaProvider, "_call_api", return_value="[MOCKED OLLAMA]"
+            OllamaProvider,
+            "_call_api",
+            return_value=LLMResult(
+                text="[MOCKED OLLAMA]", input_tokens=0, output_tokens=0
+            ),
         ) as mock_call:
             result = provider.generate(prompt, history=history)
 

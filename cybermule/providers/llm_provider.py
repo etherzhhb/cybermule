@@ -1,14 +1,24 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any, List, Tuple
+from typing import NamedTuple, Optional, Dict, Any, List, Tuple
 
+# -------------------------------
+# Named result for consistent returns
+# -------------------------------
+class LLMResult(NamedTuple):
+    text: str
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 # === Unified Interface === #
 class LLMProvider:
     def __init__(self, cache_path: str = ".llm_cache.json"):
         self.cache_path = Path(cache_path).expanduser()
         self.cache = self._load_cache()
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self.total_calls = 0
 
     def _hash_prompt(
         self,
@@ -70,14 +80,28 @@ class LLMProvider:
             return self.cache[key]
 
         messages = self._build_messages(prompt, respond_prefix, history)
-        response = self._call_api(messages)
+        result = self._call_api(messages)
+        self._track_token_usage(result.input_tokens, result.output_tokens)
+        self.cache[key] = result.text
 
-        self.cache[key] = response
         self._save_cache()
-        return response
+        return result.text
 
     def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         raise NotImplementedError
+
+    def _track_token_usage(self, input_tokens: int, output_tokens: int) -> None:
+        self.input_tokens += input_tokens
+        self.output_tokens += output_tokens
+        self.total_calls += 1
+
+    @property
+    def token_summary(self) -> dict:
+        return {
+            "input_tokens": self.input_tokens,
+            "output_tokens": self.output_tokens,
+            "total_calls": self.total_calls,
+        }
 
 
 # === Claude Base Implementation === #
@@ -123,8 +147,11 @@ class ClaudeBedrockProvider(ClaudeBaseProvider):
         )
 
         result = json.loads(response['body'].read())
-        return result["content"][0]["text"]
-
+        return LLMResult(
+            text=result["content"][0]["text"],
+            input_tokens=result.get("usage", {}).get("input_tokens", 0),
+            output_tokens=result.get("usage", {}).get("output_tokens", 0)
+        )
 
 # === Claude Direct API Implementation === #
 class ClaudeDirectProvider(ClaudeBaseProvider):
@@ -140,8 +167,11 @@ class ClaudeDirectProvider(ClaudeBaseProvider):
             temperature=self.temperature,
             messages=messages
         )
-        return message.content[0].text
-
+        return LLMResult(
+            text=message.content[0].text,
+            input_tokens=message.usage.input_tokens,
+            output_tokens=message.usage.output_tokens
+        )
 
 # === Ollama Implementation === #
 class OllamaProvider(LLMProvider):
@@ -152,7 +182,12 @@ class OllamaProvider(LLMProvider):
 
     def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         flat_prompt = self._flatten_messages(messages)
-        return self.llm.invoke(flat_prompt)
+        output = self.llm.invoke(flat_prompt)
+        return LLMResult(
+            text=output,
+            input_tokens=len(flat_prompt.split()),
+            output_tokens=len(output.split())
+        )
 
     def _flatten_messages(self, messages: List[Dict[str, Any]]) -> str:
         parts = []
@@ -175,7 +210,12 @@ class MockLLMProvider(LLMProvider):
             role = m.get("role", "user").capitalize()
             content = "".join(chunk["text"] for chunk in m["content"] if chunk["type"] == "text")
             parts.append(f"{role}: {content}")
-        return f"[MOCKED] Response to: {' | '.join(parts)}"
+        mock_response = f"[MOCKED] Response to: {' | '.join(parts)}"
+        return LLMResult(
+            text=mock_response,
+            input_tokens=len(' '.join(parts).split()),
+            output_tokens=len(mock_response.split())
+        )
 
 
 # === Optional Factory === #
