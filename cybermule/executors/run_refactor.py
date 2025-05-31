@@ -1,9 +1,8 @@
-# cybermule/executors/run_refactor.py
-
 from pathlib import Path
 from typing import Optional, List
 import difflib
 
+import typer
 from markdown_it import MarkdownIt
 
 from cybermule.memory.memory_graph import MemoryGraph
@@ -60,14 +59,14 @@ def execute(
     })
 
     if debug_prompt:
-        print("\n--- Refactor Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
+        typer.echo("\n--- Refactor Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider(config)
     response = llm.generate(prompt, respond_prefix="<refactoring_analysis>")
     refactored_code = extract_code_blocks(response)[0] if extract_code_blocks(response) else ""
 
     if debug_prompt:
-        print("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")
+        typer.echo("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")
 
     diff = difflib.unified_diff(
         file_text.splitlines(),
@@ -79,7 +78,7 @@ def execute(
 
     diff_txt = "\n".join(diff)
     if preview:
-        print(diff_txt)
+        typer.echo(diff_txt)
         status = "REFACTOR_PREVIEWED"
     else:
         file.write_text(refactored_code)

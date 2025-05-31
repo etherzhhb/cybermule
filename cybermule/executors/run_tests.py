@@ -1,4 +1,5 @@
 import subprocess
+import typer
 from cybermule.memory.memory_graph import MemoryGraph
 
 def execute(graph: MemoryGraph, debug: bool = False) -> str:
@@ -13,7 +14,9 @@ def execute(graph: MemoryGraph, debug: bool = False) -> str:
         status = "ERROR"
 
     if debug:
-        print("\n--- Test Output ---\n" + output + "\n--- End Test Output ---\n")
+        typer.echo("\n--- Test Output ---")
+        typer.echo(output)
+        typer.echo("--- End Test Output ---\n")
 
     graph.update(node_id, prompt="Run unit tests", response=output, status=status)
     return node_id
