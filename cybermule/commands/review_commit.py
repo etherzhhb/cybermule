@@ -14,8 +14,8 @@ def run(ctx: typer.Context,
         git_utils.fetch_remote(fetch)
 
     commit_sha = sha or git_utils.get_latest_commit_sha()
-    commit_msg = git_utils.get_commit_message(commit_sha)
-    commit_diff = git_utils.get_commit_diff(commit_sha)
+    commit_msg = git_utils.get_commit_message_by_sha(commit_sha)
+    commit_diff = git_utils.get_commit_diff_by_sha(commit_sha)
 
     task = f"Review commit {commit_sha[:7]}"
     graph = MemoryGraph()
