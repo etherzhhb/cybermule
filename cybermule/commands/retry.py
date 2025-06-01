@@ -7,7 +7,7 @@ from pathlib import Path
 from langchain.prompts import PromptTemplate
 
 def load_template(name: str) -> str:
-    path = Path(__file__).parent.parent / get_prompt_path(name)
+    path = get_prompt_path(name)
     return path.read_text(encoding="utf-8")
 
 def run(node_id: str, debug_prompt: bool = typer.Option(False, help="Print rendered fix prompt before calling LLM")):

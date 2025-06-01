@@ -33,7 +33,7 @@ def execute(graph: MemoryGraph, source_file: str, debug_prompt: bool = False) ->
     source_code = Path(source_file).read_text()
     uncovered_str = ", ".join(str(l) for l in uncovered_lines)
 
-    prompt_path = Path(__file__).parent.parent / get_prompt_path("suggest_test_cases.j2")
+    prompt_path = get_prompt_path("suggest_test_cases.j2")
     template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = template.format(source_code=source_code, uncovered_lines=uncovered_str)
 

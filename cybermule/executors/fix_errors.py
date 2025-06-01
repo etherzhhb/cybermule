@@ -14,7 +14,7 @@ def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str,
     parent_node = graph.get(parent_node_id)
     test_error = graph.get(test_id).get("response", "")
 
-    prompt_path = Path(__file__).parent.parent / get_prompt_path(config, name="fix_code_error.j2")
+    prompt_path = get_prompt_path(config, name="fix_code_error.j2")
 
     prompt = render_template(prompt_path, {
         "CODE_DIFF": parent_node.get("diff", ""),

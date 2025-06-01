@@ -7,7 +7,7 @@ from pathlib import Path
 def execute(graph: MemoryGraph, task_description: str, debug_prompt: bool = False) -> str:
     node_id = graph.new(f"Generate code: {task_description}")
 
-    prompt_path = Path(__file__).parent.parent / get_prompt_path("generate_code.j2")
+    prompt_path = get_prompt_path("generate_code.j2")
     template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = template.format(task_description=task_description)
 

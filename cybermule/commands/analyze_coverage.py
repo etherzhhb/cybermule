@@ -32,7 +32,7 @@ def run(file: str, debug_prompt: bool = typer.Option(False, help="Print rendered
     source = Path(file).read_text()
     uncovered_str = ", ".join(str(line) for line in uncovered)
 
-    prompt_path = Path(__file__).parent.parent / get_prompt_path("suggest_test_cases.j2")
+    prompt_path = get_prompt_path("suggest_test_cases.j2")
     template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = template.format(source_code=source, uncovered_lines=uncovered_str)
 
