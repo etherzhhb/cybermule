@@ -20,8 +20,8 @@ def test_review_commit_mock_llm(monkeypatch):
 
     # Patch git_utils to provide fake commit data
     with patch("cybermule.commands.review_commit.git_utils.get_latest_commit_sha", return_value="abcdef1"), \
-         patch("cybermule.commands.review_commit.git_utils.get_commit_message", return_value="Fix bug in handler"), \
-         patch("cybermule.commands.review_commit.git_utils.get_commit_diff", return_value="diff --git a/app.py b/app.py\n..."):
+         patch("cybermule.commands.review_commit.git_utils.get_commit_message_by_sha", return_value="Fix bug in handler"), \
+         patch("cybermule.commands.review_commit.git_utils.get_commit_diff_by_sha", return_value="diff --git a/app.py b/app.py\n..."):
 
         result = runner.invoke(app, ["--config=config.test.yaml", "review-commit"])
 
