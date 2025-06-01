@@ -6,8 +6,7 @@ from langchain.prompts import PromptTemplate
 from pathlib import Path
 
 
-def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str, 
-            debug_prompt: bool = False) -> str:
+def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str) -> str:
     node_id = graph.new("Fix code based on test errors", parent_id=parent_node_id)
 
     # Get previous code and test error
@@ -20,9 +19,6 @@ def execute(graph: MemoryGraph, config, parent_node_id: str, test_id:str,
         "CODE_DIFF": parent_node.get("diff", ""),
         "PYTEST_RESULT": test_error,
     })
-
-    if debug_prompt:
-        print("\n--- Fix Code Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider(config)
 

@@ -6,8 +6,7 @@ from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 import json
 
-def run(task: str = typer.Argument(..., help="Task description"),
-        debug_prompt: bool = typer.Option(False, help="Print prompt before sending to LLM")):
+def run(task: str = typer.Argument(..., help="Task description")):
 
     graph = MemoryGraph()
     node_id = graph.new(f"Plan: {task}")
@@ -15,9 +14,6 @@ def run(task: str = typer.Argument(..., help="Task description"),
     prompt_path = get_prompt_path("plan_task.j2")
     template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = template.format(task_description=task)
-
-    if debug_prompt:
-        print("\n--- Plan Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider()
     output = llm.generate(prompt)

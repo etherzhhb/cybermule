@@ -20,7 +20,6 @@ def test_run_refactor_preview_diff(tmp_path):
             file=file_path,
             goal="Update greeting",
             preview=True,
-            debug_prompt=False,
             config={}
         )
 
@@ -45,7 +44,6 @@ def test_run_refactor_overwrite_file(tmp_path):
             file=file_path,
             goal="Change value",
             preview=False,
-            debug_prompt=False,
             config={}
         )
 
@@ -78,7 +76,6 @@ def test_run_refactor_with_context(tmp_path):
             goal="Update main",
             context=[str(ctx_dir)],
             preview=True,
-            debug_prompt=True,
             config={}
         )
 

@@ -45,11 +45,11 @@ def run(plan_node_id: str = typer.Argument(..., help="Node ID of the plan"),
 
             # Pass source_file if needed
             if executor_name == "suggest_tests":
-                executor_map[executor_name](graph, source_file=source_file, debug_prompt=debug)
+                executor_map[executor_name](graph, source_file=source_file)
             elif executor_name == "fix_errors":
-                executor_map[executor_name](graph, parent_node_id=nid, debug_prompt=debug)
+                executor_map[executor_name](graph, parent_node_id=nid)
             else:
-                executor_map[executor_name](graph, task_description=desc, debug_prompt=debug)
+                executor_map[executor_name](graph, task_description=desc)
         except Exception as e:
             typer.echo(f"[!] Failed to classify or run step: {desc}\n{e}")
 
@@ -84,6 +84,6 @@ def run(plan_node_id: str = typer.Argument(..., help="Node ID of the plan"),
             if executor_name == "run_tests" and "FAIL" in graph.data[nid].get("response", ""):
                 typer.echo("[!] Test failed. Attempting self-correction...")
                 import commands.self_correct as self_correct
-                self_correct.run(node_id=nid, file=source_file, max_retries=2, debug_prompt=debug)
+                self_correct.run(node_id=nid, file=source_file, max_retries=2)
     except Exception as e:
         typer.echo(f"[!] Could not check task completion: {e}")
