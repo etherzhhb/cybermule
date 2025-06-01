@@ -24,7 +24,7 @@ def summarize_traceback(
         (summary: str, node_id: Optional[str])
     """
     prompt_path = get_prompt_path(config, "summarize_traceback.j2")
-    prompt = render_template(Path(prompt_path), {"traceback": traceback})
+    prompt = render_template(Path(prompt_path), {"TRACEBACK": traceback})
 
     local_graph = graph or MemoryGraph()
     node_id = local_graph.new("Summarize traceback", parent_id=parent_id, tags=["traceback"])
@@ -54,7 +54,7 @@ def generate_fix_from_summary(
         (fix_plan: dict, node_id: Optional[str])
     """
     prompt_path = get_prompt_path(config, "generate_fix_from_summary.j2")
-    prompt = render_template(Path(prompt_path), {"summary": ''})
+    prompt = render_template(Path(prompt_path), {"ERROR_SUMMARY": "see above converation"})
 
     node_id = graph.new("Generate fix plan", parent_id=parent_id, tags=["fix"])
 

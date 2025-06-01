@@ -1,15 +1,33 @@
-You are a helpful assistant who explains Python tracebacks.
+You will be given a Python traceback from a failed test. Your task is to analyze this traceback and provide a clear, concise summary of the error. This summary will be used later to generate code fixes, so it's important to capture the essential details accurately.
 
 Here is the traceback:
 
-```
-{{ traceback }}
-```
+<traceback>
+{{TRACEBACK}}
+</traceback>
 
-Please summarize the error in plain English:
-- What failed?
-- Where did it fail (file and line)?
-- What is the exception?
-- What is the likely cause?
+To analyze the traceback:
+1. Identify the type of exception raised (e.g., TypeError, ValueError, etc.).
+2. Locate the specific line where the error occurred.
+3. Determine the function or method where the error happened.
+4. Understand the context of the error (what operation was being performed).
+5. If available, note any specific values or variables mentioned in the error message.
 
-Respond with a short human-readable paragraph.
+When summarizing the error:
+1. Start with the exception type.
+2. Briefly describe what caused the error.
+3. Mention the specific line number and file where the error occurred.
+4. Include any relevant variable names or values that contributed to the error.
+5. If applicable, note any parent functions or classes involved.
+
+Provide your summary in the following format:
+
+<error_summary>
+Exception Type: [Exception type]
+Error Cause: [Brief description of what caused the error]
+Location: [File name and line number]
+Context: [Function/method name and what it was trying to do]
+Details: [Any additional relevant information, such as variable names/values]
+</error_summary>
+
+Ensure your summary is clear, concise, and contains all the necessary information for understanding the error and potentially fixing the code.

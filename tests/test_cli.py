@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 from cybermule.cli.main import app
@@ -69,19 +70,19 @@ def test_refactor_cli_smoke(tmp_path):
     assert "+print('refactored')" in result.output
 
 
-def test_run_and_analyze_with_mock_llm(tmp_path):
+def test_run_and_fix_with_mock_llm(tmp_path):
     traceback_sample = 'Traceback (most recent call last):\n  File "test_file.py", line 10, in test_func\n    assert x == 1'
 
     with (
         patch(
-            "cybermule.commands.run_and_analyze.run_pytest",
+            "cybermule.commands.run_and_fix.run_pytest",
             return_value={
                 "failure_count": 1,
                 "tracebacks": {"test_func": traceback_sample},
             },
         ),
         patch(
-            "cybermule.commands.run_and_analyze.get_first_failure",
+            "cybermule.commands.run_and_fix.get_first_failure",
             return_value=("test_func", traceback_sample),
         ),
         patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
@@ -101,25 +102,39 @@ def test_run_and_analyze_with_mock_llm(tmp_path):
 
         runner = CliRunner()
         result = runner.invoke(
-            app, ["--config=config.test.yaml", "run-and-analyze", "--summarize"]
+            app, ["--config=config.test.yaml", "run-and-fix", "--summarize-only"]
         )
 
         assert result.exit_code == 0
         assert "This is a mock summary of the failure." in result.output
 
-def test_run_and_analyze_with_mock_llm_fix_mode(tmp_path):
+def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
     traceback_sample = 'Traceback (most recent call last):\n  File "test_file.py", line 10, in test_func\n    assert x == 1'
+
+    file_path = tmp_path / "some_file.py"
+    file_path.write_text("original line\n" * 100)
+    fix_plan = {
+        "fix_description": "...",
+        "edits": [
+            {
+                "file": str(file_path),
+                "line_start": 42,
+                "line_end": 42,
+                "code_snippet": "if x == 1:"
+            }
+        ]
+    }
 
     with (
         patch(
-            "cybermule.commands.run_and_analyze.run_pytest",
+            "cybermule.commands.run_and_fix.run_pytest",
             return_value={
                 "failure_count": 1,
                 "tracebacks": {"test_func": traceback_sample},
             },
         ),
         patch(
-            "cybermule.commands.run_and_analyze.get_first_failure",
+            "cybermule.commands.run_and_fix.get_first_failure",
             return_value=("test_func", traceback_sample),
         ),
         patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
@@ -133,24 +148,17 @@ def test_run_and_analyze_with_mock_llm_fix_mode(tmp_path):
         ),
     ):
         mock_llm = MagicMock()
-        mock_llm.generate.return_value = """```json
-{
-  "file": "some_file.py",
-  "line": 42,
-  "fix_description": "Replace invalid comparison",
-  "code_snippet": "if x == 1:"
-}
-```"""
+        mock_llm.generate.return_value = f"```json\n{json.dumps(fix_plan, indent=2)}\n```"
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
         result = runner.invoke(
             app,
-            ["--config=config.test.yaml", "run-and-analyze", "--no-summarize"],
+            ["--config=config.test.yaml", "run-and-fix"],
         )
 
         # Print on failure for easier debug
         assert result.exit_code == 0, f"STDOUT:\n{result.output}\nSTDERR:\n{result.stderr}"
-        assert "'file': 'some_file.py'" in result.output
-        assert "'line': 42" in result.output
-        assert "'code_snippet': 'if x == 1:'" in result.output
+        lines = file_path.read_text().splitlines()
+        assert len(lines) == 101 # inserted
+        assert lines[42 - 1] == 'if x == 1:' # inserted "if x == 1:" at line 42

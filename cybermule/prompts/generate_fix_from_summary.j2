@@ -1,29 +1,52 @@
-You are a Python software engineer tasked with fixing a unit test failure.
+You are an AI assistant tasked with generating a JSON fix plan based on an error summary from a Python traceback. Your goal is to create a plan that addresses the problem described in the error summary.
 
-Below is a high-level summary of the error, generated from the test's traceback:
+You will be provided with an error summary in the following format:
 
----
-{{ summary }}
----
+<error_summary>
+{{ERROR_SUMMARY}}
+</error_summary>
 
-Based on this, generate a fix for the underlying issue in the code.
+Analyze the error summary carefully, paying attention to the exception type, error cause, location, context, and any additional details provided.
 
-Your output must be a **JSON object** inside a fenced code block (```json) with the following fields:
+Based on your analysis, create a JSON fix plan that addresses the problem. Your plan should include:
 
-- **file**: the path to the file to be edited (e.g., `"app/main.py"`)
-- **line**: the 1-based line number where the fix should be applied
-- **fix_description**: a short natural language explanation of what the fix does
-- **code_snippet**: the new line(s) of code to insert at that location (should be valid Python)
+1. A brief description of the fix
+2. A list of edits to be made to the code
 
-Please **do not include any additional commentary or explanation** outside the fenced block.
+Your output must be a JSON object inside a fenced code block (```json) with the following keys:
 
-Here is the required output format:
+- **fix_description**: A short human-readable explanation of the fix.
+- **edits**: A list of edits. Each item should include:
+  - **file**: Path to the file to modify (e.g., "module/file.py")
+  - **line_start**: First line number to replace or insert at (1-based)
+  - **line_end**: Last line number to replace (inclusive)
+  - **code_snippet**: The new code to insert or use as a replacement
+
+🔁 If `line_start` is equal to `line_end`, the code snippet will be **inserted before** that line.
+📌 If `line_start` < `line_end`, the snippet will **replace** the lines in that range (inclusive).
+
+Ensure that your fix plan directly addresses the issue described in the error summary. Be as specific as possible when describing the edits to be made.
+
+Here's an example of the expected output format:
 
 ```json
 {
-  "file": "some_file.py",
-  "line": 42,
-  "fix_description": "Explain what this fix does",
-  "code_snippet": "actual_code_line_here"
+  "fix_description": "Fix variable name and missing import",
+  "edits": [
+    {
+      "file": "main.py",
+      "line_start": 10,
+      "line_end": 10,
+      "code_snippet": "import os"
+    },
+    {
+      "file": "main.py",
+      "line_start": 42,
+      "line_end": 43,
+      "code_snippet": "if value == 1:\n    print('OK')"
+    }
+  ]
 }
 ```
+
+Provide your JSON fix plan based on the given error summary. Ensure that your plan is clear, concise, and directly addresses the issue described in the error summary.
