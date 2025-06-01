@@ -5,12 +5,22 @@ import typer
 import logging
 import yaml
 
-from cybermule.commands import generate, review_commit, history, show_log, filter, refactor, smart_thread
+from cybermule.commands import (
+    generate,
+    review_commit,
+    history,
+    show_log,
+    filter,
+    refactor,
+    smart_thread,
+    run_and_analyze,
+)
 
 app = typer.Typer()
 
+
 @app.callback()
-def main(   
+def main(
     ctx: typer.Context,
     config_file: Path = typer.Option(
         "config.yaml",
@@ -29,8 +39,12 @@ def main(
         dir_okay=True,
         readable=True,
     ),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
-    debug_prompt: bool = typer.Option(False, help="Print the rendered prompt before sending to LLM")
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
+    debug_prompt: bool = typer.Option(
+        False, help="Print the rendered prompt before sending to LLM"
+    ),
 ):
     level = logging.DEBUG if verbose else logging.WARNING
     logging.basicConfig(level=level)
@@ -51,6 +65,7 @@ def main(
 
     ctx.obj = {"config": config, "debug_prompt": debug_prompt}
 
+
 app.command("generate")(generate.run)
 app.command("review-commit")(review_commit.run)
 app.command("history")(history.run)
@@ -58,13 +73,17 @@ app.command("show-log")(show_log.run)
 app.command("filter")(filter.run)
 app.command("refactor")(refactor.run)
 app.command("smart_thread")(smart_thread.run)
+app.command("run-and-analyze")(run_and_analyze.run)
+
 
 # Lazily import check-llm command
 def lazy_command(module: str, attr: str = "run"):
     def _load():
         mod = importlib.import_module(module)
         return getattr(mod, attr)
+
     return _load()
+
 
 app.command("check-llm")(lazy_command("cybermule.commands.check_llm"))
 
