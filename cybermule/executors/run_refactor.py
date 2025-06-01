@@ -9,6 +9,7 @@ from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.utils.config_loader import get_prompt_path
 from cybermule.utils.file_utils import read_file_content, resolve_context_inputs
+from cybermule.utils.parsing import extract_code_blocks
 from cybermule.utils.template_utils import render_template
 
 
@@ -58,7 +59,7 @@ def execute(
 
     llm = get_llm_provider(config)
     response = llm.generate(prompt, respond_prefix="<refactoring_analysis>")
-    refactored_code = extract_code_blocks(response)[0] if extract_code_blocks(response) else ""
+    refactored_code, = extract_code_blocks(response)
 
     diff = difflib.unified_diff(
         file_text.splitlines(),
@@ -81,12 +82,3 @@ def execute(
                        generated_code=refactored_code, diff=diff_txt,
                        goal=goal, status=status)
     return node_id if graph else None
-
-
-def extract_code_blocks(text: str) -> List[str]:
-    md = MarkdownIt()
-    tokens = md.parse(text)
-    return [
-        t.content for t in tokens
-        if t.type == "fence" and t.info.strip() in ("python", "")
-    ]
