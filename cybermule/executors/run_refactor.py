@@ -51,7 +51,7 @@ def execute(
         context_code = "\n\n".join(context_parts)
 
     # Prepare prompt
-    prompt_path = Path(__file__).parent.parent / get_prompt_path(config or {}, name="refactor.j2")
+    prompt_path = get_prompt_path(config or {}, name="refactor.j2")
     prompt = render_template(prompt_path, {
         "PYTHON_CODE": file_text,
         "REFACTORING_GOAL": goal,

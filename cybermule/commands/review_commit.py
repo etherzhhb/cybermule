@@ -22,7 +22,7 @@ def run(ctx: typer.Context,
     node_id = graph.new(task)
 
     config = ctx.obj["config"]
-    prompt_path = Path(__file__).parent.parent / get_prompt_path(config, name="review_git_commit.prompt")
+    prompt_path = get_prompt_path(config, name="review_git_commit.prompt")
     prompt_template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = prompt_template.format(commit_message=commit_msg, commit_diff=commit_diff)
 

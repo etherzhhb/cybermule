@@ -12,7 +12,7 @@ def run(task: str = typer.Argument(..., help="Task description"),
     graph = MemoryGraph()
     node_id = graph.new(f"Plan: {task}")
 
-    prompt_path = Path(__file__).parent.parent / get_prompt_path("plan_task.j2")
+    prompt_path = get_prompt_path("plan_task.j2")
     template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = template.format(task_description=task)
 

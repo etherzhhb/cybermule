@@ -88,10 +88,12 @@ def summarize_traceback(
     """
     try:
         llm = get_llm_provider(config)
-
-        prompt_path = get_prompt_path(config, "summarize_traceback.j2")
-        template_path = Path(prompt_path)
-        prompt = render_template(template_path, {"traceback": traceback})
+        try:
+          prompt_path = get_prompt_path(config, "summarize_traceback.j2")
+          template_path = Path(prompt_path)
+          prompt = render_template(template_path, {"traceback": traceback})
+        except:
+          breakpoint()
 
         return llm.generate(prompt, history=history)
 
