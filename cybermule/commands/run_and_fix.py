@@ -1,0 +1,48 @@
+from typing import Optional
+import typer
+from typer import Context
+
+from cybermule.memory.memory_graph import MemoryGraph
+from cybermule.tools.test_runner import run_pytest, get_first_failure, run_single_test
+from cybermule.executors.analyzer import summarize_traceback, analyze_failure_with_llm
+from cybermule.utils.patch_utils import apply_fix
+
+def run(
+    ctx: Context,
+    summarize_only: bool = typer.Option(False, help="Only summarize the failure without applying a fix."),
+    test: Optional[str] = typer.Option(None, help="Run only the specified test (e.g. path/to/test.py::func)"),
+    maxfail: int = typer.Option(5, help="Stop after N failures.")
+):
+    config = ctx.obj.get("config", {})
+    typer.echo("[run_and_fix] Running pytest...")
+
+    if test:
+        typer.echo(f"[run_and_fix] Running single test: {test}")
+        passed, traceback = run_single_test(test)
+        if passed:
+            typer.echo("[run_and_fix] ✅ Test passed. Nothing to fix.")
+            raise typer.Exit(code=0)
+        test_name = test
+        failure_count = 1
+    else:
+        typer.echo("[run_and_fix] Running full test suite...")
+        failure_count, tracebacks = run_pytest(maxfail=maxfail)
+        if failure_count == 0:
+            typer.echo("[run_and_fix] ✅ All tests passed. Nothing to fix.")
+            raise typer.Exit(code=0)
+        test_name, traceback = get_first_failure(tracebacks)
+
+    typer.echo(f"[run_and_fix] ❌ First failed test: {test_name}\n")
+    graph = MemoryGraph()
+    
+    if summarize_only:
+        typer.echo("[run_and_fix] 🔍 LLM summary of the failure:")
+        summary, _ = summarize_traceback(traceback, config, graph=graph)
+        typer.echo(summary)
+        return
+
+    typer.echo("[run_and_fix] 🛠 LLM proposed fix:")
+    fix_plan , _ = analyze_failure_with_llm(traceback, config, graph=graph)
+
+    typer.echo(f"🧾 Fix description: {fix_plan.get('fix_description', '')}")
+    apply_fix(fix_plan, graph=graph)

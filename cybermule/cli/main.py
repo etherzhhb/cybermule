@@ -10,8 +10,8 @@ from cybermule.commands import (
     history,
     filter,
     refactor,
+    run_and_fix,
     smart_thread,
-    run_and_analyze,
 )
 
 app = typer.Typer()
@@ -66,7 +66,7 @@ app.command("history")(history.run)
 app.command("filter")(filter.run)
 app.command("refactor")(refactor.run)
 app.command("smart_thread")(smart_thread.run)
-app.command("run-and-analyze")(run_and_analyze.run)
+app.command("run-and-fix")(run_and_fix.run)
 
 
 # Lazily import check-llm command
