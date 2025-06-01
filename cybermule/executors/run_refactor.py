@@ -18,7 +18,6 @@ def execute(
     goal: str,
     context: Optional[List[str]] = None,
     preview: bool = False,
-    debug_prompt: bool = False,
     config: Optional[dict] = None
 ) -> str:
     """
@@ -30,7 +29,6 @@ def execute(
         goal: Description of the refactoring goal (e.g. "extract class").
         context: Optional list of context file globs or paths.
         preview: If True, prints a unified diff instead of applying changes.
-        debug_prompt: If True, prints the prompt and response.
         config: Optional configuration dictionary for prompt path and LLM.
 
     Returns:
@@ -58,15 +56,9 @@ def execute(
         "CONTEXT_CODE": context_code
     })
 
-    if debug_prompt:
-        typer.echo("\n--- Refactor Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
-
     llm = get_llm_provider(config)
     response = llm.generate(prompt, respond_prefix="<refactoring_analysis>")
     refactored_code = extract_code_blocks(response)[0] if extract_code_blocks(response) else ""
-
-    if debug_prompt:
-        typer.echo("\n--- Refactor Respond ---\n" + response + "\n--- End Respond ---\n")
 
     diff = difflib.unified_diff(
         file_text.splitlines(),

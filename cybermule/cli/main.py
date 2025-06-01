@@ -42,9 +42,6 @@ def main(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose logging"
     ),
-    debug_prompt: bool = typer.Option(
-        False, help="Print the rendered prompt before sending to LLM"
-    ),
 ):
     level = logging.DEBUG if verbose else logging.WARNING
     logging.basicConfig(level=level)
@@ -63,7 +60,7 @@ def main(
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
 
-    ctx.obj = {"config": config, "debug_prompt": debug_prompt}
+    ctx.obj = {"config": config}
 
 
 app.command("generate")(generate.run)

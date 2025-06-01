@@ -15,13 +15,15 @@ class LLMResult(NamedTuple):
 
 # === Unified Interface === #
 class LLMProvider:
-    def __init__(self, cache_path: str = ".llm_cache.json", show_token_summary=True):
+    def __init__(self, cache_path: str = ".llm_cache.json", show_token_summary=True, 
+                 debug_prompt=False):
         self.cache_path = Path(cache_path).expanduser()
         self.cache = self._load_cache()
         self.input_tokens = 0
         self.output_tokens = 0
         self.total_calls = 0
         self.show_token_summary = show_token_summary
+        self.debug_prompt = debug_prompt
 
     def _hash_prompt(
         self,
@@ -82,8 +84,15 @@ class LLMProvider:
         if key in self.cache:
             return self.cache[key]
 
+        if self.debug_prompt:
+            typer.echo("\n--- Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
+
         messages = self._build_messages(prompt, respond_prefix, history)
         result = self._call_api(messages)
+
+        if self.debug_prompt:
+            typer.echo("\n--- Respond ---\n" + result.text + "\n--- End Respond ---\n")
+
         self._track_token_usage(result.input_tokens, result.output_tokens)
         self.cache[key] = result.text
 

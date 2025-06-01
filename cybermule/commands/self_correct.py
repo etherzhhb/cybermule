@@ -7,8 +7,7 @@ from cybermule.executors import run_tests, fix_errors
 
 def run(node_id: str = typer.Argument(..., help="Node ID of failed code/test"),
         file: str = typer.Option(..., help="Source file to run tests on"),
-        max_retries: int = typer.Option(2, help="How many times to retry fixing"),
-        debug_prompt: bool = typer.Option(False, help="Print prompt before sending to LLM")):
+        max_retries: int = typer.Option(2, help="How many times to retry fixing")):
 
     graph = MemoryGraph()
 
@@ -22,9 +21,6 @@ def run(node_id: str = typer.Argument(..., help="Node ID of failed code/test"),
         template = PromptTemplate.from_template(Path(prompt_path).read_text())
         prompt = template.format(code=code, test_output=output)
 
-        if debug_prompt:
-            print("\n--- Diagnose Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
-
         llm = get_llm_provider()
         diagnosis = llm.generate(prompt)
 
@@ -33,10 +29,10 @@ def run(node_id: str = typer.Argument(..., help="Node ID of failed code/test"),
         graph.update(diagnosis_id, prompt=prompt, response=diagnosis, status="DIAGNOSED")
 
         # Fix attempt
-        fix_id = fix_errors.execute(graph, parent_node_id=diagnosis_id, debug_prompt=debug_prompt)
+        fix_id = fix_errors.execute(graph, parent_node_id=diagnosis_id)
 
         # Test the fix
-        result = run_tests.execute(graph, source_file=file, parent_node_id=fix_id, debug_prompt=debug_prompt)
+        result = run_tests.execute(graph, source_file=file, parent_node_id=fix_id)
 
         if "PASS" in result.upper() or "OK" in result.upper():
             typer.echo("✅ Self-correction succeeded.")

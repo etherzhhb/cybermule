@@ -5,7 +5,7 @@ from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools.config_loader import get_prompt_path
 from langchain.prompts import PromptTemplate
 
-def execute(graph: MemoryGraph, source_file: str, debug_prompt: bool = False) -> str:
+def execute(graph: MemoryGraph, source_file: str) -> str:
     node_id = graph.new(f"Suggest tests for uncovered code in {source_file}")
 
     # Load coverage.json
@@ -36,9 +36,6 @@ def execute(graph: MemoryGraph, source_file: str, debug_prompt: bool = False) ->
     prompt_path = get_prompt_path("suggest_test_cases.j2")
     template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = template.format(source_code=source_code, uncovered_lines=uncovered_str)
-
-    if debug_prompt:
-        print("\n--- Suggest Tests Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
     llm = get_llm_provider()
     suggestions = llm.generate(prompt)

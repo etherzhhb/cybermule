@@ -16,7 +16,6 @@ def run(
     ),
 ):
     config = ctx.obj.get("config", {})
-    debug = ctx.obj.get("debug_prompt", False)
 
     run_refactor.execute(
         graph=None,
@@ -24,6 +23,5 @@ def run(
         goal=goal,
         context=context,
         preview=preview,
-        debug_prompt=debug,
         config=config
     )

@@ -35,7 +35,7 @@ def extract_json_block(text: str) -> Optional[dict]:
 def analyze_failure_with_llm(
     traceback: str,
     config: Dict[str, Any],
-    history: Tuple[Dict[str, Any], ...] = ()
+    history: Tuple[Dict[str, Any], ...] = (),
 ) -> dict:
     """
     Analyze a pytest failure using stepwise Chain-of-Thought reasoning via an LLM.
@@ -73,7 +73,7 @@ def analyze_failure_with_llm(
 def summarize_traceback(
     traceback: str,
     config: Dict[str, Any],
-    history: Tuple[Dict[str, Any], ...] = ()
+    history: Tuple[Dict[str, Any], ...] = (),
 ) -> str:
     """
     Use an LLM to summarize what happened in the traceback and explain the error.
@@ -88,13 +88,9 @@ def summarize_traceback(
     """
     try:
         llm = get_llm_provider(config)
-        try:
-          prompt_path = get_prompt_path(config, "summarize_traceback.j2")
-          template_path = Path(prompt_path)
-          prompt = render_template(template_path, {"traceback": traceback})
-        except:
-          breakpoint()
-
+        prompt_path = get_prompt_path(config, "summarize_traceback.j2")
+        template_path = Path(prompt_path)
+        prompt = render_template(template_path, {"traceback": traceback})
         return llm.generate(prompt, history=history)
 
     except Exception as e:

@@ -10,7 +10,7 @@ def load_template(name: str) -> str:
     path = get_prompt_path(name)
     return path.read_text(encoding="utf-8")
 
-def run(debug_prompt: bool = typer.Option(False, help='Print rendered prompt before calling LLM')):
+def run():
     claude = get_llm_provider()
     graph = MemoryGraph()
     task = typer.prompt("What do you want the agent to do?")
@@ -31,9 +31,6 @@ def run(debug_prompt: bool = typer.Option(False, help='Print rendered prompt bef
     prompt = PromptTemplate.from_template(template_str)
     rendered = prompt.format(task=task, context=combined_context)
 
-    if debug_prompt:
-        typer.echo("\n--- Rendered Prompt ---\n" + rendered + "\n--- End Prompt ---\n")
-
     code = claude.generate(rendered)
     graph.update(node_id, prompt=rendered, response=code)
 
@@ -52,9 +49,6 @@ def run(debug_prompt: bool = typer.Option(False, help='Print rendered prompt bef
         template_str = load_template("fix_code_error.j2")
         fix_prompt = PromptTemplate.from_template(template_str)
         rendered = fix_prompt.format(original_code=code, error_output=stderr)
-
-        if debug_prompt:
-            typer.echo("\n--- Fix Prompt ---\n" + rendered + "\n--- End Fix Prompt ---\n")
 
         fixed_code = claude.generate(rendered)
         graph.update(retry_id, prompt=rendered, response=fixed_code)

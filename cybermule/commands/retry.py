@@ -10,7 +10,7 @@ def load_template(name: str) -> str:
     path = get_prompt_path(name)
     return path.read_text(encoding="utf-8")
 
-def run(node_id: str, debug_prompt: bool = typer.Option(False, help="Print rendered fix prompt before calling LLM")):
+def run(node_id: str):
     graph = MemoryGraph()
     claude = get_llm_provider()
 
@@ -33,9 +33,6 @@ def run(node_id: str, debug_prompt: bool = typer.Option(False, help="Print rende
     template_str = load_template("fix_code_error.j2")
     template = PromptTemplate.from_template(template_str)
     rendered = template.format(original_code=node["response"], error_output=node["error"])
-
-    if debug_prompt:
-        typer.echo("\n--- Retry Fix Prompt ---\n" + rendered + "\n--- End Prompt ---\n")
 
     fixed_code = claude.generate(rendered)
     graph.update(retry_id, prompt=rendered, response=fixed_code)

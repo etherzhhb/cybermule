@@ -26,9 +26,6 @@ def run(ctx: typer.Context,
     prompt_template = PromptTemplate.from_template(prompt_path.read_text())
     prompt = prompt_template.format(commit_message=commit_msg, commit_diff=commit_diff)
 
-    if ctx.obj["debug_prompt"]:
-        typer.echo("\n--- Review Commit Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
-
     llm = get_llm_provider(config)
     review = llm.generate(prompt)
 
