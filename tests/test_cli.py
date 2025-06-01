@@ -162,3 +162,76 @@ def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
         lines = file_path.read_text().splitlines()
         assert len(lines) == 101 # inserted
         assert lines[42 - 1] == 'if x == 1:' # inserted "if x == 1:" at line 42
+
+def test_run_and_fix_with_multi_edit_plan(tmp_path):
+    file_a = tmp_path / "file_a.py"
+    file_b = tmp_path / "file_b.py"
+    file_a.write_text("x = 0\n" * 50)
+    file_b.write_text("y = 0\n" * 50)
+
+    fix_plan = {
+        "fix_description": "Edit both files",
+        "edits": [
+            {
+                "file": str(file_a),
+                "line_start": 10,
+                "line_end": 10,
+                "code_snippet": "x = 42"
+            },
+            {
+                "file": str(file_b),
+                "line_start": 20,
+                "line_end": 21,
+                "code_snippet": "y = 999"
+            }
+        ]
+    }
+
+    with (
+        patch("cybermule.commands.run_and_fix.run_pytest", return_value={"failure_count": 1, "tracebacks": {"test_func": "mock traceback"}}),
+        patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_func", "mock traceback")),
+        patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
+        patch("cybermule.executors.analyzer.get_prompt_path", return_value="dummy.j2"),
+        patch("cybermule.executors.analyzer.render_template", return_value="rendered"),
+    ):
+        mock_llm = MagicMock()
+        mock_llm.generate.return_value = f"```json\n{json.dumps(fix_plan, indent=2)}\n```"
+        mock_get_llm.return_value = mock_llm
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["--config=config.test.yaml", "run-and-fix"])
+
+        assert result.exit_code == 0
+        assert "🧾 Fix description: Edit both files" in result.output
+        assert "[apply_fix] ✅ Applied 2 edits across 2 file(s)" in result.output
+
+def test_run_and_fix_with_test_selection(tmp_path):
+    fix_plan = {
+        "fix_description": "Fix for selected test",
+        "edits": [
+            {
+                "file": str(tmp_path / "some_file.py"),
+                "line_start": 5,
+                "line_end": 5,
+                "code_snippet": "print('inserted line')"
+            }
+        ]
+    }
+
+    with (
+        patch("cybermule.commands.run_and_fix.run_pytest", return_value={"failure_count": 1, "tracebacks": {"test_selected": "sample traceback"}}),
+        patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_selected", "sample traceback")),
+        patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
+        patch("cybermule.executors.analyzer.get_prompt_path", return_value="dummy.j2"),
+        patch("cybermule.executors.analyzer.render_template", return_value="rendered"),
+    ):
+        mock_llm = MagicMock()
+        mock_llm.generate.return_value = f"```json\n{json.dumps(fix_plan, indent=2)}\n```"
+        mock_get_llm.return_value = mock_llm
+
+        runner = CliRunner()
+        (tmp_path / "some_file.py").write_text("print('original')\n" * 10)
+        result = runner.invoke(app, ["--config=config.test.yaml", "run-and-fix", "--test", "test_selected"])
+
+        assert result.exit_code == 0
+        assert "test_selected" in result.output
