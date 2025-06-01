@@ -1,6 +1,6 @@
 import typer
 from cybermule.memory.memory_graph import MemoryGraph
-from cybermule.tools.config_loader import get_prompt_path
+from cybermule.utils.config_loader import get_prompt_path
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.tools import test_runner
 from pathlib import Path
