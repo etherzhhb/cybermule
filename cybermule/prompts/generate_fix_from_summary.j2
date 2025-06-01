@@ -1,0 +1,29 @@
+You are a Python software engineer tasked with fixing a unit test failure.
+
+Below is a high-level summary of the error, generated from the test's traceback:
+
+---
+{{ summary }}
+---
+
+Based on this, generate a fix for the underlying issue in the code.
+
+Your output must be a **JSON object** inside a fenced code block (```json) with the following fields:
+
+- **file**: the path to the file to be edited (e.g., `"app/main.py"`)
+- **line**: the 1-based line number where the fix should be applied
+- **fix_description**: a short natural language explanation of what the fix does
+- **code_snippet**: the new line(s) of code to insert at that location (should be valid Python)
+
+Please **do not include any additional commentary or explanation** outside the fenced block.
+
+Here is the required output format:
+
+```json
+{
+  "file": "some_file.py",
+  "line": 42,
+  "fix_description": "Explain what this fix does",
+  "code_snippet": "actual_code_line_here"
+}
+```

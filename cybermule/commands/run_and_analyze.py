@@ -23,9 +23,9 @@ def run(
 
     if summarize:
         typer.echo("[run_and_analyze] 🔍 LLM summary of the failure:")
-        summary = summarize_traceback(traceback, config)
+        summary, _ = summarize_traceback(traceback, config)
         typer.echo(summary)
     else:
         typer.echo("[run_and_analyze] 🛠 LLM proposed fix:")
-        fix = analyze_failure_with_llm(traceback, config)
+        fix, _ = analyze_failure_with_llm(traceback, config)
         typer.echo(fix)

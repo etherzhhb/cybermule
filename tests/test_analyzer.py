@@ -2,6 +2,8 @@ import pytest
 from cybermule.executors import analyzer
 from unittest.mock import patch
 
+from cybermule.utils.parsing import extract_first_json_block
+
 # === extract_json_block ===
 
 def test_extract_json_block_valid():
@@ -13,7 +15,7 @@ def test_extract_json_block_valid():
   "code_snippet": "return x + 1"
 }
 ```"""
-    result = analyzer.extract_json_block(text)
+    result = extract_first_json_block(text)
     assert isinstance(result, dict)
     assert result["file"] == "src/example.py"
     assert result["line"] == 10
@@ -22,12 +24,12 @@ def test_extract_json_block_invalid():
     text = """```json
 { invalid json
 ```"""
-    result = analyzer.extract_json_block(text)
+    result = extract_first_json_block(text)
     assert result is None
 
 def test_extract_json_block_no_json():
     text = "This is just a string without code blocks"
-    result = analyzer.extract_json_block(text)
+    result = extract_first_json_block(text)
     assert result is None
 
 # === analyze_failure_with_llm ===
@@ -66,7 +68,7 @@ def test_analyze_failure_with_llm_mocked(
     mock_get_llm_provider.return_value = MockLLM()
 
     traceback = "Traceback (most recent call last): ..."
-    result = analyzer.analyze_failure_with_llm(traceback, mock_config)
+    result, _ = analyzer.analyze_failure_with_llm(traceback, mock_config)
 
     assert result["file"] == "project/fail.py"
     assert result["line"] == 17
@@ -92,7 +94,7 @@ def test_summarize_traceback_mocked(
     mock_get_llm_provider.return_value = MockLLM()
 
     traceback = "Traceback (most recent call last): ..."
-    summary = analyzer.summarize_traceback(traceback, mock_config)
+    summary, _ = analyzer.summarize_traceback(traceback, mock_config)
 
     assert "file" in summary
     assert "line" in summary
