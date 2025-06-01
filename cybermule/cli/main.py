@@ -6,10 +6,8 @@ import logging
 import yaml
 
 from cybermule.commands import (
-    generate,
     review_commit,
     history,
-    show_log,
     filter,
     refactor,
     smart_thread,
@@ -63,10 +61,8 @@ def main(
     ctx.obj = {"config": config}
 
 
-app.command("generate")(generate.run)
 app.command("review-commit")(review_commit.run)
 app.command("history")(history.run)
-app.command("show-log")(show_log.run)
 app.command("filter")(filter.run)
 app.command("refactor")(refactor.run)
 app.command("smart_thread")(smart_thread.run)
