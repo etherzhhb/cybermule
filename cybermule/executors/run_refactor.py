@@ -7,7 +7,7 @@ from markdown_it import MarkdownIt
 
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.providers.llm_provider import get_llm_provider
-from cybermule.tools.config_loader import get_prompt_path
+from cybermule.utils.config_loader import get_prompt_path
 from cybermule.utils.file_utils import read_file_content, resolve_context_inputs
 from cybermule.utils.template_utils import render_template
 
