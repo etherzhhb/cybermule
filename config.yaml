@@ -3,7 +3,18 @@ llm:
   model_id: "mistral"
   base_url: "http://localhost:11434"
 
-prompt_paths:
-  generate_code: prompts/generate_code.j2
-  fix_code_error: prompts/fix_code_error.j2
-  review_commit: prompts/review_commit.j2
+setup_command: |
+  echo "[Setup] Creating virtualenv..."
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -e .
+
+test_command: |
+  echo "[Test] Running full suite..."
+  source venv/bin/activate
+  pytest --maxfail=5 --tb=short -q
+
+single_test_command: |
+  echo "[Test] Running single test: {test_name}"
+  source venv/bin/activate
+  pytest -q -k {test_name} --tb=short

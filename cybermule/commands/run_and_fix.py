@@ -3,7 +3,7 @@ import typer
 from typer import Context
 
 from cybermule.memory.memory_graph import MemoryGraph
-from cybermule.tools.test_runner import run_pytest, get_first_failure, run_single_test
+from cybermule.tools.test_runner import run_test, get_first_failure, run_single_test
 from cybermule.executors.analyzer import summarize_traceback, analyze_failure_with_llm
 from cybermule.utils.patch_utils import apply_fix
 
@@ -11,14 +11,13 @@ def run(
     ctx: Context,
     summarize_only: bool = typer.Option(False, help="Only summarize the failure without applying a fix."),
     test: Optional[str] = typer.Option(None, help="Run only the specified test (e.g. path/to/test.py::func)"),
-    maxfail: int = typer.Option(5, help="Stop after N failures.")
 ):
     config = ctx.obj.get("config", {})
     typer.echo("[run_and_fix] Running pytest...")
 
     if test:
         typer.echo(f"[run_and_fix] Running single test: {test}")
-        passed, traceback = run_single_test(test)
+        passed, traceback = run_single_test(test_name=test, config=config)
         if passed:
             typer.echo("[run_and_fix] ✅ Test passed. Nothing to fix.")
             raise typer.Exit(code=0)
@@ -26,7 +25,7 @@ def run(
         failure_count = 1
     else:
         typer.echo("[run_and_fix] Running full test suite...")
-        failure_count, tracebacks = run_pytest(maxfail=maxfail)
+        failure_count, tracebacks = run_test(config)
         if failure_count == 0:
             typer.echo("[run_and_fix] ✅ All tests passed. Nothing to fix.")
             raise typer.Exit(code=0)

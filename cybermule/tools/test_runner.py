@@ -1,102 +1,110 @@
-import subprocess
 import re
-import os
+import subprocess
 from pathlib import Path
+import typer
 
 
-def prepare_test_environment(venv_path: Path = Path("venv"), project_root: Path = Path(".")) -> Path:
+def run_shell_block(label: str, script_path: str | None = None, command_block: str | None = None) -> str:
     """
-    Prepare the test environment using a virtualenv Python executable.
+    Execute a shell script or inline shell command block and return combined output.
 
     Args:
-        venv_path: Path to the virtual environment directory.
-        project_root: Path to the root of the project to install in editable mode.
+        label: Descriptive label for logging (e.g., "Setup", "Test").
+        script_path: Path to a bash script (if used).
+        command_block: Shell command block as string (if used).
 
     Returns:
-        Path to the venv's Python executable, which should be used for all test subprocesses.
+        Captured output (stdout + stderr) as a string.
+
+    Raises:
+        RuntimeError if the script or command fails.
     """
-    python_exe = venv_path / "bin" / "python"
-    if os.name == "nt":
-        python_exe = venv_path / "Scripts" / "python.exe"
+    if script_path:
+        typer.echo(f"[{label}] Running script: {script_path}")
+        result = subprocess.run(["bash", script_path], text=True, capture_output=True)
+    elif command_block:
+        typer.echo(f"[{label}] Running inline shell block...")
+        result = subprocess.run(command_block, shell=True, executable="/bin/bash", text=True, capture_output=True)
+    else:
+        raise ValueError(f"[{label}] No script or command provided")
 
-    if not python_exe.exists():
-        raise RuntimeError(f"Virtualenv Python not found at: {python_exe}")
+    output = result.stdout + "\n" + result.stderr
 
-    try:
-        subprocess.run([str(python_exe), "-m", "pip", "install", "-e", str(project_root)], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"[prepare_test_environment] pip install failed: {e}")
-        raise
+    if result.returncode != 0:
+        raise RuntimeError(f"[{label}] Failed with exit code {result.returncode}:\n{output.strip()}")
 
-    return python_exe
+    return output
 
 
-def run_pytest(maxfail: int = 10, tb_mode: str = "short", python_exe: Path | None = None) -> tuple[int, list[str]]:
+def prepare_test_environment(config: dict) -> None:
     """
-    Run the full test suite using pytest and return the number of failed tests and their tracebacks.
+    Prepare the test environment using the 'setup_command' from config.
 
     Args:
-        maxfail: Maximum number of failures to allow before pytest exits early.
-        tb_mode: Traceback verbosity mode ('auto', 'long', 'short', 'no').
-        python_exe: Optional Python executable (e.g., from venv). Defaults to "pytest" in PATH.
+        config: Dict containing setup_command or setup_script.
+    """
+    run_shell_block(
+        label="Setup",
+        script_path=config.get("setup_script"),
+        command_block=config.get("setup_command"),
+    )
+
+
+def run_test(config: dict) -> tuple[int, list[str]]:
+    """
+    Run the full test suite using config and return number of failures and tracebacks.
+
+    Args:
+        config: Dict containing test_command or test_script.
 
     Returns:
-        failure_count: Number of failed tests.
-        tracebacks: List of raw traceback strings from failed tests.
+        Tuple of (failure_count, list of traceback blocks).
     """
-    # TODO: Consider refactoring shared subprocess logic with run_single_test
     try:
-        cmd = [str(python_exe), "-m", "pytest"] if python_exe else ["pytest"]
-        cmd += [f"--maxfail={maxfail}", f"--tb={tb_mode}", "-q"]
+        prepare_test_environment(config)
 
-        result = subprocess.run(
-            cmd,
-            check=False,
-            text=True,
-            capture_output=True
+        output = run_shell_block(
+            label="Test",
+            script_path=config.get("test_script"),
+            command_block=config.get("test_command"),
         )
-        output = result.stdout + "\n" + result.stderr
+
         failures = re.findall(r"=+ FAILURES =+\n(.*?)\n=+", output, re.DOTALL)
         return len(failures), failures
     except Exception as e:
-        print(f"[run_pytest] Exception: {e}")
+        typer.echo(f"[run_test] Exception: {e}")
         return -1, []
 
 
-def run_single_test(test_name: str, tb_mode: str = "short", python_exe: Path | None = None) -> tuple[bool, str]:
+def run_single_test(test_name: str, config: dict) -> tuple[bool, str]:
     """
-    Run a single test using pytest and return whether it passed and its traceback if failed.
+    Run a single test using config-specified command/script. Return (success, traceback).
 
     Args:
-        test_name: Name of the test function or file::function identifier.
-        tb_mode: Traceback verbosity mode ('auto', 'long', 'short', 'no').
-        python_exe: Optional Python executable (e.g., from venv). Defaults to "pytest" in PATH.
+        test_name: Name of the test (e.g. test_file.py::test_func).
+        config: Dict with keys:
+            - single_test_command: shell string with {test_name}
+            - single_test_script: path to bash script
 
     Returns:
-        success: True if test passed, False otherwise.
-        traceback: Error traceback string if failed, else empty string.
+        Tuple of (passed: bool, traceback: str)
     """
-    # TODO: Consider refactoring shared subprocess logic with run_pytest
     try:
-        cmd = [str(python_exe), "-m", "pytest"] if python_exe else ["pytest"]
-        cmd += ["-q", "-k", test_name, f"--tb={tb_mode}"]
+        prepare_test_environment(config)
 
-        result = subprocess.run(
-            cmd,
-            check=False,
-            text=True,
-            capture_output=True
-        )
-        output = result.stdout + "\n" + result.stderr
-        failed = result.returncode != 0
-        if failed:
-            traceback_match = re.search(r"=+ FAILURES =+\n(.*?)\n=+", output, re.DOTALL)
-            traceback = traceback_match.group(1).strip() if traceback_match else output
+        if "single_test_command" in config:
+            command = config["single_test_command"].format(test_name=test_name)
+            output = run_shell_block("SingleTest", command_block=command)
+        elif "single_test_script" in config:
+            output = run_shell_block("SingleTest", script_path=config["single_test_script"])
         else:
-            traceback = ""
-        return not failed, traceback
+            raise ValueError("No single test runner configured in config")
+
+        match = re.search(r"=+ FAILURES =+\n(.*?)\n=+", output, re.DOTALL)
+        if match:
+            return False, match.group(1).strip()
+        return True, ""
     except Exception as e:
-        print(f"[run_single_test] Exception: {e}")
         return False, str(e)
 
 
@@ -105,11 +113,10 @@ def get_first_failure(tracebacks: list[str]) -> tuple[str, str]:
     Return the name and traceback of the first failed test.
 
     Args:
-        tracebacks: List of traceback strings from run_pytest.
+        tracebacks: List of raw traceback blocks.
 
     Returns:
-        test_name: The test name string (approximation).
-        traceback: The corresponding traceback.
+        Tuple of (test_name, traceback).
     """
     if not tracebacks:
         return "", ""

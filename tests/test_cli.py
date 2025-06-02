@@ -75,7 +75,7 @@ def test_run_and_fix_with_mock_llm(tmp_path):
 
     with (
         patch(
-            "cybermule.commands.run_and_fix.run_pytest",
+            "cybermule.commands.run_and_fix.run_test",
             return_value={
                 "failure_count": 1,
                 "tracebacks": {"test_func": traceback_sample},
@@ -127,7 +127,7 @@ def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
 
     with (
         patch(
-            "cybermule.commands.run_and_fix.run_pytest",
+            "cybermule.commands.run_and_fix.run_test",
             return_value={
                 "failure_count": 1,
                 "tracebacks": {"test_func": traceback_sample},
@@ -188,7 +188,7 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
     }
 
     with (
-        patch("cybermule.commands.run_and_fix.run_pytest", return_value={"failure_count": 1, "tracebacks": {"test_func": "mock traceback"}}),
+        patch("cybermule.commands.run_and_fix.run_test", return_value={"failure_count": 1, "tracebacks": {"test_func": "mock traceback"}}),
         patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_func", "mock traceback")),
         patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
         patch("cybermule.executors.analyzer.get_prompt_path", return_value="dummy.j2"),
@@ -219,7 +219,7 @@ def test_run_and_fix_with_test_selection(tmp_path):
     }
 
     with (
-        patch("cybermule.commands.run_and_fix.run_pytest", return_value={"failure_count": 1, "tracebacks": {"test_selected": "sample traceback"}}),
+        patch("cybermule.commands.run_and_fix.run_single_test", return_value={"failure_count": 1, "tracebacks": {"test_selected": "sample traceback"}}),
         patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_selected", "sample traceback")),
         patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
         patch("cybermule.executors.analyzer.get_prompt_path", return_value="dummy.j2"),
