@@ -23,7 +23,7 @@ def run_shell_block(label: str, script_path: str | None = None, command_block: s
         typer.echo(f"[{label}] Running script: {script_path}")
         result = subprocess.run(["bash", script_path], text=True, capture_output=True)
     elif command_block:
-        typer.echo(f"[{label}] Running inline shell block...")
+        typer.echo(f"[{label}] Running inline shell block...\n{command_block}\n")
         result = subprocess.run(command_block, shell=True, executable="/bin/bash", text=True, capture_output=True)
     else:
         raise ValueError(f"[{label}] No script or command provided")

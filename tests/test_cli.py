@@ -16,32 +16,6 @@ def test_check_mock_llm():
     assert "Model response: [MOCKED] Response to: User: Say hello" in result.output
 
 
-def test_review_commit_mock_llm(monkeypatch):
-    runner = CliRunner()
-
-    # Patch git_utils to provide fake commit data
-    with (
-        patch(
-            "cybermule.commands.review_commit.git_utils.get_latest_commit_sha",
-            return_value="abcdef1",
-        ),
-        patch(
-            "cybermule.commands.review_commit.git_utils.get_commit_message_by_sha",
-            return_value="Fix bug in handler",
-        ),
-        patch(
-            "cybermule.commands.review_commit.git_utils.get_commit_diff_by_sha",
-            return_value="diff --git a/app.py b/app.py\n...",
-        ),
-    ):
-
-        result = runner.invoke(app, ["--config=config.test.yaml", "review-commit"])
-
-        assert result.exit_code == 0
-        assert "Fix bug in handler" in result.output
-        assert "diff --git a/app.py" in result.output
-
-
 def test_refactor_cli_smoke(tmp_path):
     file_to_refactor = tmp_path / "example.py"
     file_to_refactor.write_text("print('hello')\n")
@@ -235,3 +209,51 @@ def test_run_and_fix_with_test_selection(tmp_path):
 
         assert result.exit_code == 0
         assert "test_selected" in result.output
+
+def test_run_and_fix_smoke_review_commit(monkeypatch):
+    runner = CliRunner()
+
+    # Patch Git utils
+    with (
+        patch("cybermule.commands.run_and_fix.run_test", return_value=(1, "Traceback (most recent call last)...\nAssertionError")),
+        patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="abcdef1"),
+        patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Fix bug"),
+        patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/x.py b/x.py"),
+        patch("cybermule.executors.git_review.get_llm_provider") as mock_llm,
+        patch("cybermule.executors.analyzer.summarize_traceback", return_value="Some summary"),
+        patch("cybermule.tools.test_runner.get_first_failure", return_value="tests/test_x.py::test_fail"),
+    ):
+        mock_llm.return_value.generate.return_value = "This commit introduces a bug."
+
+        result = runner.invoke(app, [
+            "--config=config.test.yaml",
+            "run-and-fix",
+            "--review-commit",
+            "--summarize-only"
+        ])
+
+        assert result.exit_code == 0
+        assert "Reviewing latest commit..." in result.output
+        assert "Running pytest..." in result.output
+        assert "This commit introduces a bug." in result.output
+
+def test_review_commit_smoke(monkeypatch):
+    runner = CliRunner()
+
+    with (
+        patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="deadbeef"),
+        patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Add new endpoint"),
+        patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/api.py b/api.py"),
+        patch("cybermule.executors.git_review.get_llm_provider") as mock_llm,
+    ):
+        mock_llm.return_value.generate.return_value = "This looks good overall."
+
+        result = runner.invoke(app, [
+            "--config=config.test.yaml",
+            "review-commit",
+        ])
+
+        assert result.exit_code == 0
+        assert "Commit SHA:" in result.output
+        assert "AI Review" in result.output
+        assert "This looks good overall." in result.output

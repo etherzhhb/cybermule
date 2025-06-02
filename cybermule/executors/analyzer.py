@@ -34,12 +34,8 @@ def summarize_traceback(
     local_graph = graph or MemoryGraph()
     node_id = local_graph.new("Summarize traceback", parent_id=parent_id, tags=["traceback"])
 
-    if parent_id:
-        history = extract_chat_history(parent_id, graph)
-    else:
-        history = ()
-
     llm = get_llm_provider(config)
+    history = extract_chat_history(parent_id, memory=local_graph)
     response = llm.generate(prompt, history=history)
     error_summary, = extract_tagged_blocks(response, tag="error_summary")
 

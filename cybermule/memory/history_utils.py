@@ -1,8 +1,8 @@
-from typing import List, Dict, Union
+from typing import List, Dict, Optional, Union
 from cybermule.memory.memory_graph import MemoryGraph
 
 def extract_chat_history(
-    node: Union[str, dict],
+    node: Optional[Union[str, dict]],
     memory: MemoryGraph,
     include_root: bool = True
 ) -> List[Dict]:
@@ -27,6 +27,9 @@ def extract_chat_history(
             ...
         ]
     """
+    if not node:
+        return []
+
     if isinstance(node, dict):
         node_id = node["id"]
     else:
