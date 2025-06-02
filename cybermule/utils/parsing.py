@@ -51,3 +51,34 @@ def extract_code_blocks(text: str) -> List[str]:
         t.content for t in tokens
         if t.type == "fence" and t.info.strip() in ("python", "")
     ]
+
+import re
+from typing import List
+
+
+def extract_tagged_blocks(text: str, tag: str) -> List[str]:
+    """
+    Extract all inner contents of <tag>...</tag> blocks from the given text.
+
+    Args:
+        text: Full LLM output.
+        tag: The tag name to extract (e.g., "error_summary").
+
+    Returns:
+        A list of inner contents (strings), one for each <tag>...</tag> block.
+
+    Raises:
+        ValueError if nesting is detected.
+    """
+    open_tag = f"<{tag}>"
+    close_tag = f"</{tag}>"
+    pattern = re.compile(fr"{re.escape(open_tag)}(.*?){re.escape(close_tag)}", re.DOTALL)
+
+    contents = pattern.findall(text)
+
+    for content in contents:
+        if open_tag in content:
+            raise ValueError(f"Nested <{tag}> blocks are not allowed.")
+
+    return contents
+

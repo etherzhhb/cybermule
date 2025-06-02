@@ -97,7 +97,7 @@ def test_run_and_fix_with_mock_llm(tmp_path):
     ):
 
         mock_llm = MagicMock()
-        mock_llm.generate.return_value = "This is a mock summary of the failure."
+        mock_llm.generate.return_value = "<error_summary>This is a mock summary of the failure.</error_summary>"
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
@@ -148,7 +148,7 @@ def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
         ),
     ):
         mock_llm = MagicMock()
-        mock_llm.generate.return_value = f"```json\n{json.dumps(fix_plan, indent=2)}\n```"
+        mock_llm.generate.return_value = f"<error_summary>This is a mock summary of the failure.</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
@@ -195,7 +195,7 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
         patch("cybermule.executors.analyzer.render_template", return_value="rendered"),
     ):
         mock_llm = MagicMock()
-        mock_llm.generate.return_value = f"```json\n{json.dumps(fix_plan, indent=2)}\n```"
+        mock_llm.generate.return_value = f"<error_summary>some error</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
@@ -226,7 +226,7 @@ def test_run_and_fix_with_test_selection(tmp_path):
         patch("cybermule.executors.analyzer.render_template", return_value="rendered"),
     ):
         mock_llm = MagicMock()
-        mock_llm.generate.return_value = f"```json\n{json.dumps(fix_plan, indent=2)}\n```"
+        mock_llm.generate.return_value = f"<error_summary>some error</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
