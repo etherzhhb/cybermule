@@ -125,7 +125,7 @@ class ClaudeBaseProvider(LLMProvider):
     def __init__(
         self,
         model_id: str,
-        temperature: float = 0.7,
+        temperature: float = 0.3,
         max_tokens: int = 20000,
         system_prompt: str = '',
         **kwargs
