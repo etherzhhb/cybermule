@@ -88,8 +88,9 @@ class LLMProvider:
         if self.debug_prompt:
             typer.echo("\n--- Prompt ---\n" + prompt + "\n--- End Prompt ---\n")
 
-        messages = self._build_messages(prompt, respond_prefix, history)
-        result = self._call_api(messages)
+        messages = self._build_messages(prompt, respond_prefix=respond_prefix,
+                                        history=history)
+        result = self._call_api(messages, respond_prefix=respond_prefix)
 
         self._track_token_usage(result.input_tokens, result.output_tokens)
         self.cache[key] = result.text
@@ -97,7 +98,7 @@ class LLMProvider:
         self._save_cache()
         return result.text
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+    def _call_api(self, messages: List[Dict[str, Any]], respond_prefix) -> LLMResult:
         raise NotImplementedError
 
     def _track_token_usage(self, input_tokens: int, output_tokens: int) -> None:
@@ -134,7 +135,7 @@ class ClaudeBaseProvider(LLMProvider):
         self.max_tokens = max_tokens
         self.system_prompt = system_prompt
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+    def _call_api(self, messages: List[Dict[str, Any]], respond_prefix) -> LLMResult:
         raise NotImplementedError
 
 
@@ -145,7 +146,7 @@ class ClaudeBedrockProvider(ClaudeBaseProvider):
         import boto3
         self.client = boto3.client("bedrock-runtime", region_name=region)
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> LLMResult:
+    def _call_api(self, messages: List[Dict[str, Any]], respond_prefix) -> LLMResult:
         from botocore.exceptions import ClientError
 
         payload = {
@@ -165,7 +166,7 @@ class ClaudeBedrockProvider(ClaudeBaseProvider):
                     accept="application/json",
                 )
 
-                full_text = ""
+                full_text = str(respond_prefix)
                 input_tokens = output_tokens = 0
 
                 for event in response.get("body", []):
@@ -206,7 +207,7 @@ class ClaudeDirectProvider(ClaudeBaseProvider):
         import anthropic
         self.client = anthropic.Anthropic(api_key=api_key)
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> LLMResult:
+    def _call_api(self, messages: List[Dict[str, Any]], respond_prefix) -> LLMResult:
         from anthropic._exceptions import OverloadedError
 
         max_retries, delay = 5, 2 # initial delay in seconds
@@ -219,7 +220,7 @@ class ClaudeDirectProvider(ClaudeBaseProvider):
                     temperature=self.temperature,
                     messages=messages,
                 ) as stream:
-                    full_text = ""
+                    full_text = str(respond_prefix)
                     for text in stream.text_stream:
                         typer.echo(text if self.debug_prompt else '.', nl=False)
                         full_text += text
@@ -245,7 +246,7 @@ class OllamaProvider(LLMProvider):
         from langchain_ollama import OllamaLLM
         self.llm = OllamaLLM(model=model_id, base_url=base_url)
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+    def _call_api(self, messages: List[Dict[str, Any]], respond_prefix) -> LLMResult:
         flat_prompt = self._flatten_messages(messages)
         output = self.llm.invoke(flat_prompt)
 
@@ -273,7 +274,7 @@ class MockLLMProvider(LLMProvider):
         super().__init__(**kwargs)
         self.model_id = model_id or "mock"
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+    def _call_api(self, messages: List[Dict[str, Any]], respond_prefix) -> LLMResult:
         parts = []
         for m in messages:
             role = m.get("role", "user").capitalize()
