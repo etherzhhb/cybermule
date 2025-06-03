@@ -112,7 +112,7 @@ def generate_fix_from_summary(
 
     current_contexts = base_contexts[:]
     node_id = graph.new("Generate fix plan", parent_id=parent_id, tags=["fix"])
-    history = () #extract_chat_history(parent_id, graph)
+    history = extract_chat_history(parent_id, memory=graph)
     llm = get_llm_provider(config)
 
     for round_num in range(max_rounds):
