@@ -176,18 +176,38 @@ class ClaudeDirectProvider(ClaudeBaseProvider):
         import anthropic
         self.client = anthropic.Anthropic(api_key=api_key)
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
-        message = self.client.messages.create(
-            model=self.model_id,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            messages=messages
-        )
-        return LLMResult(
-            text=message.content[0].text,
-            input_tokens=message.usage.input_tokens,
-            output_tokens=message.usage.output_tokens
-        )
+    def _call_api(self, messages: List[Dict[str, Any]]) -> LLMResult:
+        from anthropic._exceptions import OverloadedError
+        
+        max_retries = 5
+        delay = 2  # initial delay in seconds
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                with self.client.messages.stream(
+                    model=self.model_id,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature,
+                    messages=messages,
+                ) as stream:
+                    full_text = ""
+                    for text in stream.text_stream:
+                        typer.echo(text if self.debug_prompt else '.', nl=False)
+                        full_text += text
+                    typer.echo()  # Newline after streaming
+                    final_message = stream.get_final_message()
+                    return LLMResult(
+                        text=full_text,
+                        input_tokens=final_message.usage.input_tokens,
+                        output_tokens=final_message.usage.output_tokens,
+                    )
+            except OverloadedError as e:
+                if attempt == max_retries:
+                    typer.secho("🚨 Claude API overloaded (529), retries exhausted.", fg=typer.colors.RED, bold=True)
+                    raise RuntimeError("Claude API overloaded (529), retries exhausted.") from e
+                typer.secho(f"⚠️ Claude API overloaded (529). Retrying in {delay} seconds... (Attempt {attempt}/{max_retries})", fg=typer.colors.YELLOW)
+                time.sleep(delay)
+                delay *= 2  # exponential backoff
 
 # === Ollama Implementation === #
 class OllamaProvider(LLMProvider):
