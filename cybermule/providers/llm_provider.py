@@ -1,7 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import NamedTuple, Optional, Dict, Any, List, Tuple
+from typing import NamedTuple, Optional, Dict, Any, List, Sequence, Tuple
 
 import typer
 
@@ -29,7 +29,7 @@ class LLMProvider:
         self,
         prompt: str,
         respond_prefix: str,
-        history: Tuple[Dict[str, Any], ...]
+        history: Sequence[Dict[str, Any]]
     ) -> str:
         key_material = json.dumps({
             "prompt": prompt,
@@ -53,7 +53,7 @@ class LLMProvider:
         self,
         prompt: str,
         respond_prefix: str = '',
-        history: Tuple[Dict[str, Any], ...] = (),
+        history: Sequence[Dict[str, Any]] = (),
         system_prompt: str = ''
     ) -> List[Dict[str, Any]]:
         messages = list(history)
@@ -78,7 +78,7 @@ class LLMProvider:
         self,
         prompt: str,
         respond_prefix: str = '',
-        history: Tuple[Dict[str, Any], ...] = ()
+        history: Sequence[Dict[str, Any]] = ()
     ) -> str:
         key = self._hash_prompt(prompt, respond_prefix, history)
         if key in self.cache:
@@ -147,7 +147,7 @@ class ClaudeBedrockProvider(ClaudeBaseProvider):
         import boto3
         self.client = boto3.client("bedrock-runtime", region_name=region)
 
-    def _call_api(self, messages: List[Dict[str, Any]]) -> str:
+    def _call_api(self, messages: List[Dict[str, Any]]) -> LLMResult:
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "messages": messages,

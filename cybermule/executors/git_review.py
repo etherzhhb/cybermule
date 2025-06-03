@@ -15,7 +15,7 @@ def review_commit_with_llm(
     parent_id: Optional[str] = None,
     sha: Optional[str] = None,
     fetch: Optional[str] = None,
-) -> Tuple[str, str, str]:
+) -> Tuple[str, str]:
     """
     Run LLM-based review of a Git commit and log it to the MemoryGraph.
 
