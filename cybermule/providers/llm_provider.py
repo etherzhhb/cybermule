@@ -166,18 +166,27 @@ class ClaudeBedrockProvider(ClaudeBaseProvider):
                 )
 
                 full_text = ""
+                input_tokens = output_tokens = 0
+
                 for event in response.get("body", []):
                     chunk = event.get("chunk")
                     if not chunk:
                         continue
                     block = json.loads(chunk["bytes"].decode())
+
                     if block.get("type") == "content_block_delta":
                         delta = block.get("delta", {}).get("text", "")
                         typer.echo(delta, nl=False)
                         full_text += delta
+                    elif block.get("type") == "message_start":
+                      usage = block.get("message", {}).get("usage", {})
+                      input_tokens = usage.get("input_tokens", 0)
+                    elif block.get("type") == "message_delta":
+                      usage = block.get("usage", {})
+                      output_tokens = usage.get("output_tokens", 0)
 
                 typer.echo()  # newline after stream
-                return LLMResult(text=full_text, input_tokens=0, output_tokens=0)
+                return LLMResult(text=full_text, input_tokens=input_tokens, output_tokens=output_tokens)
 
             except ClientError as e:
                 typer.secho(
