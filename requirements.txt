@@ -1,7 +1,7 @@
 boto3
 faiss-cpu
-sentence-transformers
-GitPython
 langchain
 pyyaml
 typer
+tree-sitter
+tree-sitter-python
