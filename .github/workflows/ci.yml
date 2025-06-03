@@ -36,7 +36,9 @@ jobs:
         rm -rf ctags
 
     - name: Verify ctags version
-      run: ctags --version
+      run: |
+        ctags --version
+        ctags --help
 
     - name: Install dependencies
       run: |
