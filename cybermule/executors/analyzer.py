@@ -3,12 +3,14 @@ from typing import Dict, Any, Tuple, Optional
 
 import json
 
+import typer
+
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.memory.memory_graph import MemoryGraph
+from cybermule.symbol_resolution import extract_definition_by_callsite, resolve_symbol
 from cybermule.utils.context_extract import (
     extract_locations,
     get_context_snippets,
-    extract_definition_by_callsite
 )
 from cybermule.utils.template_utils import render_template
 from cybermule.utils.config_loader import get_prompt_path
@@ -49,40 +51,41 @@ def fulfill_context_requests(
     request_info: list,
     context_map: Dict[str, Dict],
     current_contexts: list,
+    project_root: Optional[Path] = None
 ) -> None:
-    """Fulfill request_info entries and enrich context."""
+    """
+    Extract additional code snippets requested by the LLM, based on symbol or callsite info.
+    Avoids duplicating context already present in context_map.
+    """
+    project_root = project_root or Path(".").resolve()
+
     for request in request_info:
-        context_id = request.get("code_context_id")
+        context_id = request.get("code_context_id")  # e.g., "some/file.py:42"
         symbol = request.get("symbol")
 
         try:
-            path_str, line_str = context_id.split(":")
-            path = Path(path_str)
-            line = int(line_str)
+            parts = context_id.split(":")
+            path = Path(parts[0])
+            line = int(parts[1]) if len(parts) > 1 else None
 
-            ctx = extract_definition_by_callsite(path, line, symbol)
-            if ctx is None:
-                lines = path.read_text(encoding="utf-8").splitlines()
-                start = max(0, line - 6)
-                end = min(len(lines), line + 5)
-                snippet = "\n".join(lines[start:end])
-                ctx = {
-                    "file": str(path),
-                    "symbol": symbol,
-                    "start_line": start + 1,
-                    "traceback_line": line,
-                    "snippet": snippet
-                }
+            ctx = None
 
-            key = f"{ctx['file']}:{ctx['traceback_line']}"
-            if key in context_map:
+            if symbol and line is None:
+                ctx = resolve_symbol(symbol, project_root=project_root)
+            elif symbol:
+                ctx = extract_definition_by_callsite(path, line, project_root=project_root)
+
+            if not ctx:
+                typer.echo(f"⚠️  [WARN] Could not extract symbol definition for: {request}")
                 continue
 
-            context_map[key] = ctx
-            current_contexts.append(ctx)
+            key = f"{ctx['file']}:{ctx['start_line']}"
+            if key not in context_map:
+                context_map[key] = ctx
+                current_contexts.append(ctx)
 
         except Exception as e:
-            print(f"[WARN] Failed to fulfill context request: {request} → {e}")
+            typer.echo(f"💥 [ERROR] Failed to fulfill context request: {request} → {e}")
 
 
 def generate_fix_from_summary(
@@ -104,6 +107,8 @@ def generate_fix_from_summary(
     context_map = {
         f"{ctx['file']}:{ctx['traceback_line']}": ctx for ctx in base_contexts
     }
+
+    project_root = Path(config.get("project_root", "."))
 
     current_contexts = base_contexts[:]
     node_id = graph.new("Generate fix plan", parent_id=parent_id, tags=["fix"])
@@ -127,7 +132,9 @@ def generate_fix_from_summary(
         if not request_info:
             return fix_plan, node_id
 
-        fulfill_context_requests(request_info, context_map, current_contexts)
+        fulfill_context_requests(request_info=request_info, context_map=context_map,
+                                 current_contexts=current_contexts,
+                                 project_root=project_root)
 
     return fix_plan, node_id
 
