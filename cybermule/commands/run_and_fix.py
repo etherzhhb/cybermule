@@ -45,12 +45,14 @@ def run(
 
     if summarize_only:
         typer.echo("[run_and_fix] 🔍 LLM summary of the failure:")
-        summary, _ = summarize_traceback(traceback, config, graph=graph, parent_id=review_node_id)
+        summary, _ = summarize_traceback(traceback, config, graph=graph,
+                                        parent_id=review_node_id)
         typer.echo(summary)
         return
 
     typer.echo("[run_and_fix] 🛠 LLM proposed fix:")
-    fix_plan , _ = analyze_failure_with_llm(traceback, config, graph=graph)
+    fix_plan, _ = analyze_failure_with_llm(traceback, config, graph=graph,
+                                           parent_id=review_node_id)
 
     typer.echo(f"🧾 Fix description: {fix_plan.get('fix_description', '')}")
     apply_fix(fix_plan, graph=graph)
