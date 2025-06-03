@@ -109,7 +109,7 @@ class LLMProvider:
         
         # Print token summary with $ emoji if enabled
         if self.show_token_summary:
-            typer.echo(f"$ Token Summary: {self.token_summary}")
+            typer.echo(f"💸 Token Summary: {self.token_summary}")
 
     @property
     def token_summary(self) -> dict:
