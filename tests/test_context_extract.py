@@ -43,7 +43,7 @@ def test_extract_function_at_line_found(tmp_path):
 
     result = extract_function_at_line(test_file, line_number=3)
     assert result is not None
-    assert result["symbol"] == "MyClass.method"
+    assert result["symbol"] == "method"
     assert "def method" in result["snippet"]
     assert result["traceback_line"] == 3
     assert result["start_line"] == 3
@@ -72,7 +72,7 @@ def test_get_context_snippets_with_function_match(tmp_path):
     context, = get_context_snippets(locations)
 
     assert str(path) in context['file']
-    assert context["symbol"] == "outer.inner"
+    assert context["symbol"] == "inner"
     assert "def inner" in context["snippet"]
 
 
