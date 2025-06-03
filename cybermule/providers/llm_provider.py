@@ -1,6 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
+import time
 from typing import NamedTuple, Optional, Dict, Any, List, Sequence, Tuple
 
 import typer
@@ -90,9 +91,6 @@ class LLMProvider:
         messages = self._build_messages(prompt, respond_prefix, history)
         result = self._call_api(messages)
 
-        if self.debug_prompt:
-            typer.echo("\n--- Respond ---\n" + result.text + "\n--- End Respond ---\n")
-
         self._track_token_usage(result.input_tokens, result.output_tokens)
         self.cache[key] = result.text
 
@@ -148,26 +146,49 @@ class ClaudeBedrockProvider(ClaudeBaseProvider):
         self.client = boto3.client("bedrock-runtime", region_name=region)
 
     def _call_api(self, messages: List[Dict[str, Any]]) -> LLMResult:
-        body = {
+        from botocore.exceptions import ClientError
+
+        payload = {
             "anthropic_version": "bedrock-2023-05-31",
             "messages": messages,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
         }
 
-        response = self.client.invoke_model(
-            modelId=self.model_id,
-            contentType="application/json",
-            accept="application/json",
-            body=json.dumps(body)
-        )
+        max_retries, delay = 5, 2 # initial delay in seconds
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = self.client.invoke_model_with_response_stream(
+                    modelId=self.model_id,
+                    body=json.dumps(payload),
+                    contentType="application/json",
+                    accept="application/json",
+                )
 
-        result = json.loads(response['body'].read())
-        return LLMResult(
-            text=result["content"][0]["text"],
-            input_tokens=result.get("usage", {}).get("input_tokens", 0),
-            output_tokens=result.get("usage", {}).get("output_tokens", 0)
-        )
+                full_text = ""
+                for event in response.get("body", []):
+                    chunk = event.get("chunk")
+                    if not chunk:
+                        continue
+                    block = json.loads(chunk["bytes"].decode())
+                    if block.get("type") == "content_block_delta":
+                        delta = block.get("delta", {}).get("text", "")
+                        typer.echo(delta, nl=False)
+                        full_text += delta
+
+                typer.echo()  # newline after stream
+                return LLMResult(text=full_text, input_tokens=0, output_tokens=0)
+
+            except ClientError as e:
+                typer.secho(
+                    f"⚠️ Bedrock API error on attempt {attempt}/{max_retries}: {str(e)}",
+                    fg=typer.colors.YELLOW,
+                )
+                if attempt == max_retries:
+                    typer.secho("🚨 Claude API retries exhausted.", fg=typer.colors.RED, bold=True)
+                    raise RuntimeError("Claude Bedrock API failed repeatedly") from e
+                time.sleep(delay)
+                delay *= 2
 
 # === Claude Direct API Implementation === #
 class ClaudeDirectProvider(ClaudeBaseProvider):
@@ -178,9 +199,8 @@ class ClaudeDirectProvider(ClaudeBaseProvider):
 
     def _call_api(self, messages: List[Dict[str, Any]]) -> LLMResult:
         from anthropic._exceptions import OverloadedError
-        
-        max_retries = 5
-        delay = 2  # initial delay in seconds
+
+        max_retries, delay = 5, 2 # initial delay in seconds
         
         for attempt in range(1, max_retries + 1):
             try:
@@ -219,6 +239,10 @@ class OllamaProvider(LLMProvider):
     def _call_api(self, messages: List[Dict[str, Any]]) -> str:
         flat_prompt = self._flatten_messages(messages)
         output = self.llm.invoke(flat_prompt)
+
+        if self.debug_prompt:
+            typer.echo("\n--- Respond ---\n" + output + "\n--- End Respond ---\n")            
+
         return LLMResult(
             text=output,
             input_tokens=len(flat_prompt.split()),
@@ -247,6 +271,10 @@ class MockLLMProvider(LLMProvider):
             content = "".join(chunk["text"] for chunk in m["content"] if chunk["type"] == "text")
             parts.append(f"{role}: {content}")
         mock_response = f"[MOCKED] Response to: {' | '.join(parts)}"
+
+        if self.debug_prompt:
+            typer.echo("\n--- Respond ---\n" + mock_response + "\n--- End Respond ---\n")     
+
         return LLMResult(
             text=mock_response,
             input_tokens=len(' '.join(parts).split()),
