@@ -22,18 +22,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y autoconf pkg-config build-essential
-
-    - name: Install Universal Ctags
-      run: |
-        git clone https://github.com/universal-ctags/ctags.git
-        cd ctags
-        ./autogen.sh
-        ./configure
-        make
-        sudo make install
-        cd ..
-        rm -rf ctags
+        sudo apt-get install -y universal-ctags
 
     - name: Verify ctags version
       run: |
