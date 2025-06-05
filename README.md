@@ -1,166 +1,213 @@
-# 🤖 Cybermule
+# 🤖 Cybermule – Autonomous AI Agent for Coding
 
 [![CI](https://github.com/etherzhhb/cybermule/actions/workflows/ci.yml/badge.svg)](https://github.com/etherzhhb/cybermule/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/etherzhhb/cybermule/branch/main/graph/badge.svg)](https://codecov.io/gh/etherzhhb/cybermule)
 
-An AI-powered CLI agent for code generation, testing, and Git commit review.
+**Cybermule** is an autonomous AI-powered CLI agent that detects test failures, analyzes them using LLMs (Claude, OpenAI), and automatically proposes, applies, verifies, and tracks code fixes — safely and iteratively, using Git.
 
-
-An autonomous AI coding agent that can generate, test, and refine code using Bedrock Claude or OpenAI. Supports a modular executor system and planner-agent loop.
-
-📄 For technical design details, see [design.md](design.md).
-
-# 🧠 AI Code Agent (CLI)
-
-A command-line AI assistant for coding tasks like:
-- Generating Python code from natural language
-- Running unit tests and fixing errors automatically
-- Reviewing Git commits
-- Tracking retry attempts using a memory graph
+🔧 Designed to fix failing tests, review commits, and track retry attempts in a memory graph. Modular, pluggable, and optimized for LLM-assisted debugging.
 
 ---
 
-## ✨ Features
+## 🧩 Core Features
 
-| Feature                           | Status |
-|-----------------------------------|--------|
-| Code generation from task prompts | ✅     |
-| Unit test execution and retry loop| ✅     |
-| Git commit diff review            | ✅     |
-| Memory graph for retries & context| ✅     |
-| `--debug-prompt` CLI flag         | ✅     |
-| Pluggable prompt templates        | ✅     |
-| Configurable backend (Claude via AWS Bedrock) | ✅     |
+| Feature                                      | Status |
+|---------------------------------------------|--------|
+| Pytest failure detection and trace parsing  | ✅     |
+| Multi-round LLM fix reasoning (`CoT`)       | ✅     |
+| Structured fix plan w/ Aider-style patches  | ✅     |
+| Git branch isolation and rollback           | ✅     |
+| MemoryGraph to track attempts and context   | ✅     |
+| Symbol resolution for context requests      | ✅     |
+| CLI tools for automation                    | ✅     |
+| Claude/OpenAI/AWS Bedrock support           | ✅     |
 
 ---
 
-## 🚀 CLI Commands
+## 🚀 Getting Started
 
-| Command                | Description                                 |
-|------------------------|---------------------------------------------|
-| `check-llm` | Test connection to the configured LLM provider |
-| `generate`             | Generate code for a given task              |
-| `review-commit`        | Analyze latest Git commit                   |
-| `history`              | Show memory of past tasks and retries       |
-| `describe-node <id>`   | Show full prompt/response for a node        |
-| `retry <id>`           | Retry a failed attempt using fix prompt     |
-| `analyze-coverage --file X.py` | Suggest tests for uncovered lines in a file     |
-| `plan "task desc"`         | Generate a step-by-step plan for a coding task |
-| `smart-thread "task" --file X.py` | Full agent workflow: code, test, fix, suggest |
-| `planner-loop <plan_id> --file X.py` | Run planned steps (LLM-based executor mapping, auto self-correction, goal check) |
+### 🛠️ Install
+
+Install required dependencies:
+
+```bash
+# Install system dependencies
+brew install --HEAD universal-ctags/universal-ctags/universal-ctags  # macOS
+sudo apt install universal-ctags  # Ubuntu
+
+# Install Aider
+pip install aider-install
+aider-install
+
+# Clone and install Cybermule
+git clone https://github.com/etherzhhb/cybermule.git
+cd cybermule
+pip install -e .
+```
+
+---
+
+## ⚙️ Configuration (`config.yaml`)
+
+Here's a sample configuration for Cybermule using LiteLLM:
+
+```yaml
+litellm:
+  model: "claude-3-5-haiku-20241022"
+  max_tokens: 8192
+  debug_prompt: true
+
+setup_command: |
+  pip install -e .
+
+test_command: |
+  pytest --tb=short -q
+
+single_test_command: |
+  pytest -q -k {test_name} --tb=short
+```
+
+---
+
+## 🧠 How It Works
+
+Cybermule automates the test-debug-fix cycle using this loop:
+
+1. **Run Pytest** → detect failing tests
+2. **Extract First Failure** → parse traceback
+3. **LLM Summary** → explain failure in natural language
+4. **Fix Plan Generation** → propose JSON fix plan
+5. **Code Edit (via Aider)** → patch the code with Git safety
+6. **Rerun Test** → validate fix or retry with new branch
+7. **Track in Memory Graph** → store attempt + reasoning trace
+
+---
+
+## 🗂️ Project Structure
+
+```text
+cybermule/
+├── commands/            # CLI entrypoints (e.g., run-and-fix)
+├── executors/           # LLM logic: traceback analysis, fix generation
+├── tools/               # Git and test runners
+├── utils/               # Symbol resolution, AST tools
+├── memory/              # Memory graph and commit history
+├── prompts/             # Prompt templates (Jinja2)
+├── symbol_resolution/   # Ctags + AST + semantic search
+```
+
+---
+
+## 📦 CLI Usage
+
+```bash
+# Run the full fix loop
+cybermule run-and-fix
+
+# Review last commit
+cybermule review-commit
+```
+
+Supports filtering by test name, file, or error.
+
+---
+
+## 📘 Prompt Format
+
+### Fix Plan Example
+
+```json
+{
+  "fix_description": "Fix condition in test case",
+  "symbol": "TestExample.test_something",
+  "edits": [
+    {
+      "file": "tests/test_example.py",
+      "line": 42,
+      "code_snippet": "assert x == 1"
+    }
+  ]
+}
+```
+
 ---
 
 ## 🧠 Memory Graph
 
-All task runs and retries are saved to `memory_graph.json` with full parent-child linkage.
+All reasoning steps (traceback → summary → fix plan) are stored in a DAG using `MemoryGraph`, enabling future review, debugging, or replay.
 
-```txt
-Task: Add function
-├── Code v1 (fail)
-│   └── Retry v2 (pass)
-└── Retry v3 (fail)
-```
+Also used for:
+- Retry tracking
+- Fix lineage
+- Commit review prompts
 
 ---
 
-## 🛠 Setup
+## 🧩 Context Extraction
 
-### 1. Install Dependencies
+When the LLM says it needs more code context:
 
-```bash
-pip install -r requirements.txt
+```json
+{
+  "needs_more_context": true,
+  "request_description": "...",
+  "required_info": [
+    {
+      "symbol": "extract_locations",
+      "ref_path": "utils/context_extract.py",
+      "ref_function": "get_context_snippets"
+    }
+  ]
+}
 ```
 
-OR using `pyproject.toml`:
-
-```bash
-pip install .
-```
-
-### 2. Configure Bedrock (Claude)
-
-Edit `config.yaml`:
-
-```yaml
-llm:
-  provider: bedrock
-  model_id: anthropic.claude-3-sonnet-20240229-v1:0
-  region: us-west-2
-```
-
-Make sure AWS credentials are set.
+Cybermule extracts relevant snippets using:
+- AST (preferred)
+- Ctags
+- Tree-sitter fallback
+- Optional semantic search (e.g. FAISS)
 
 ---
 
-## 📂 Project Structure
+## 🔌 Supported LLMs
 
-```
-cybermule/
-  cli/                  # Typer CLI entrypoint
-  commands/             # Subcommand handlers
-  providers/            # LLM backends (Claude, OpenAI, etc.)
-  tools/                # Test runner, config loader, etc.
-  prompts/              # Jinja2 prompt templates
-  executors/            # Modular agent execution steps
-  memory/               # DAG memory system
-tests/                  # Unit and integration tests
-README.md
-config.yaml
-```
+- Claude via AWS Bedrock
+- OpenAI (GPT-4)
+- Ollama (local inference)
 
 ---
 
-## ⚙️ Modular Executors
-
-The `cybermule/executors/` module contains reusable components for agent workflows.
-
-| Executor File         | Purpose                                                |
-|-----------------------|--------------------------------------------------------|
-| `run_codegen.py`      | Generates code based on task description               |
-| `run_tests.py`        | Executes tests using `pytest` and captures output      |
-| `fix_errors.py`       | Uses test failure feedback to regenerate fixed code    |
-| `suggest_tests.py`    | Suggests new test cases for uncovered functions/lines  |
-
-🧠 A separate prompt (`classify_step.j2`) uses LLM reasoning to dynamically choose which executor to run based on the plan step.
-
-These executors are used by the `smart-thread` and `planner-loop` agents and can be composed into more complex workflows.
-
-## 🧪 Example
+## ✅ Tests
 
 ```bash
-cybermule plan "Build a CSV parser"
-cybermule planner-loop <plan_node_id> --file my_module.py
+pytest tests/
 ```
-```bash
-cybermule smart-thread "Build a CSV parser" --file my_module.py
-# Runs codegen → test → fix → suggest-tests
-```
-```bash
-cybermule plan "Build a class that parses JSON"
-# Returns a numbered step plan and logs to memory
-```
-```bash
-cybermule analyze-coverage --file my_module.py
-# Requires coverage run + coverage json first
-```
-```bash
-cybermule generate
-# Generates code and saves result to memory graph
 
-cybermule history
-# Lists past tasks and retries
-
-cybermule retry <node_id>
-# Retry with updated prompt and test result
-```
+Includes tests for:
+- CLI
+- Fix generation
+- Symbol resolution
+- Git safety
+- Context enrichment
 
 ---
 
-## 📌 Roadmap
+## 📚 Related Files
 
-- [x] Core generate + retry CLI
-- [x] Memory graph for retries
-- [ ] GitHub PR integration (deferred)
-- [x] Multi-step planning workflows
-- [x] Test coverage introspection
-- [ ] Optional TUI or web UI
+- [`design.md`](design.md) – System architecture
+- [`implementation_plan.md`](implementation_plan.md) – Development roadmap
+
+---
+
+## 🛡️ Philosophy
+
+- 🔒 **Safe by Default** – Git branches, commits, undo support
+- 🔁 **Fix, Test, Retry** – Multi-round AI reasoning
+- 🧠 **Context-Aware** – Extracts only what the LLM needs
+- 💬 **Transparent** – All decisions logged and reviewable
+
+---
+
+## 📬 Feedback
+
+Pull requests and issues welcome!
