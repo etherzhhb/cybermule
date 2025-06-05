@@ -1,8 +1,10 @@
 import pytest
 from pathlib import Path
+from cybermule.executors.analyzer import fulfill_context_requests
 from cybermule.symbol_resolution import (
     extract_definition_by_callsite,
     resolve_symbol,
+    resolve_symbol_in_function,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -38,7 +40,7 @@ def test_alias_import_resolution():
 
 def test_callsite_resolution_local():
     path = FIXTURES / "calls_local.py"
-    result = extract_definition_by_callsite(path, 5)
+    result = extract_definition_by_callsite(path=path, line=5, symbol="foo")
     assert result is not None
     assert result["symbol"] == "foo"
     assert "def foo" in result["snippet"]
@@ -46,7 +48,31 @@ def test_callsite_resolution_local():
 
 def test_callsite_resolution_imported():
     path = FIXTURES / "calls_imported.py"
-    result = extract_definition_by_callsite(path, 4, project_root=FIXTURES)
+    result = extract_definition_by_callsite(path=path, line=4, symbol="bar",
+                                            project_root=FIXTURES)
     assert result is not None
     assert result["symbol"] == "bar"
     assert result["file"].endswith("lib.py")
+
+def test_resolve_symbol_in_function():
+    path = FIXTURES / "calls_in_function.py"
+    result = resolve_symbol_in_function(
+        ref_path=path,
+        ref_function="foo",
+        symbol="bar",
+        project_root=FIXTURES,
+    )
+    assert result is not None, "Expected to resolve symbol 'bar' inside 'foo'"
+    assert result["symbol"] == "bar"
+    assert "def bar" in result["snippet"]
+
+def test_fulfill_context_by_function():
+    info = [{
+        "symbol": "bar",
+        "ref_path": str(FIXTURES / "calls_in_function.py"),
+        "ref_function": "foo",
+    }]
+    result = fulfill_context_requests(info, project_root=FIXTURES)
+    assert len(result) == 1
+    assert result[0]["symbol"] == "bar"
+    assert "def bar" in result[0]["snippet"]

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Optional
 
-from cybermule.symbol_resolution import resolve_symbol, extract_function_at_line
+from cybermule.symbol_resolution import extract_function_at_line
 
 
 def extract_locations(traceback: str) -> List[Dict]: 
