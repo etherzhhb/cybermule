@@ -11,7 +11,7 @@ def get_aider_extra_args(config: dict) -> list[str]:
     """
     args = []
 
-    llm_cfg = config.get("llm", {})
+    llm_cfg = config.get("litellm", {})
     aider_cfg = config.get("aider", {})
 
     if model := llm_cfg.get("model"):
