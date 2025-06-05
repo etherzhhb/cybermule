@@ -11,7 +11,6 @@ def test_extract_locations_simple():
   File "/project/module.py", line 42, in my_function
 '''
     x = extract_locations(tb)
-    print(x)
     assert x[0] == {"file": "/project/main.py", "line": 10, "function": "<module>"}
     assert x[1] == {"file": "/project/module.py", "line": 42, "function": "my_function"}
 

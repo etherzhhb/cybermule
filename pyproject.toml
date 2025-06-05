@@ -10,6 +10,7 @@ requires-python = ">=3.9"
 dependencies = [
     "typer[all]",
     "networkx",
+    "litellm",
     "langchain",
     "faiss-cpu",
     "pyyaml",
