@@ -1,10 +1,12 @@
+from pathlib import Path
 import typer
 
 from typing import Dict, Optional
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.utils.aider_engine import apply_with_aider
-from cybermule.utils.config_loader import get_aider_extra_args
+from cybermule.utils.config_loader import get_aider_extra_args, get_prompt_path
 from cybermule.utils.git_utils import get_commits_since, get_latest_commit_sha, run_git_command
+from cybermule.utils.template_utils import render_template
 
 
 def apply_code_change(
@@ -20,20 +22,16 @@ def apply_code_change(
 
     pre_sha = get_latest_commit_sha()
 
-    message_parts = []
     touched_files = set()
 
-    for edit in change_plan["edits"]:
-        file_path = edit["file"]
-        touched_files.add(file_path)
-
-        message_parts.append(
-            f"In `{file_path}`:\n- {edit.get('fix_description', 'Edit')}\n"
-            f"```python\n{edit['code_snippet']}\n```"
-        )
-
-    message = "\n\n".join(message_parts)
     file_paths = list(touched_files)
+    # Collect all files touched
+    touched_files = {edit["file"] for edit in change_plan["edits"]}
+    file_paths = list(touched_files)
+
+    # Render message using Jinja2 template
+    template_path = get_prompt_path(config, "aider_message.j2")
+    message = render_template(template_path, {"edits": change_plan["edits"]})
 
     # Print message for visibility
     typer.echo("[apply_code_change] 📝 Message sent to Aider:")
