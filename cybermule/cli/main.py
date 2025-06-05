@@ -10,6 +10,7 @@ from cybermule.commands import (
     history,
     filter,
     run_and_fix,
+    suggest_test,
 )
 
 app = typer.Typer()
@@ -63,6 +64,7 @@ app.command("review-commit")(review_commit.run)
 app.command("history")(history.run)
 app.command("filter")(filter.run)
 app.command("run-and-fix")(run_and_fix.run)
+app.command("suggest-test")(suggest_test.run)
 
 
 # Lazily import check-llm command

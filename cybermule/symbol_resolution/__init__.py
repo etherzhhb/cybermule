@@ -5,10 +5,11 @@ import typer
 
 from .ctags_index import _lookup_symbol
 from .tree_sitter_lookup import (
-    _extract_symbol_definition,
+    extract_symbol_definition,
     extract_function_at_line, 
     extract_called_symbols_on_line,
-    extract_called_symbols_in_function
+    extract_called_symbols_in_function,
+    extract_test_definitions
 )
 
 def resolve_symbol_in_function(ref_path: Path, ref_function: str, symbol: str, project_root: Optional[Path] = None) -> Optional[Dict[str, str]]:
@@ -35,7 +36,7 @@ def resolve_symbol(symbol: str, project_root: Path) -> Optional[Dict[str, str]]:
     result = _lookup_symbol(symbol, project_root)
     if result:
         file_path = Path(project_root) / result["file"]
-        definition = _extract_symbol_definition(file_path, symbol)
+        definition = extract_symbol_definition(file_path, symbol)
         if definition:
             return definition
     return None
@@ -71,4 +72,6 @@ __all__ = [
     "resolve_symbol_in_function",
     "extract_definition_by_callsite",
     "extract_function_at_line",
+    "extract_symbol_definition",
+    "extract_test_definitions",
 ]
