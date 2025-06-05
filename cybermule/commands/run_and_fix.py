@@ -6,7 +6,7 @@ from cybermule.executors.git_review import review_commit_with_llm
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.tools.test_runner import run_test, get_first_failure, run_single_test
 from cybermule.executors.analyzer import summarize_traceback, analyze_failure_with_llm
-from cybermule.utils.patch_utils import apply_fix
+from cybermule.executors.apply_code_change import apply_code_change
 
 def run(
     ctx: Context,
@@ -51,8 +51,10 @@ def run(
         return
 
     typer.echo("[run_and_fix] 🛠 LLM proposed fix:")
-    fix_plan, _ = analyze_failure_with_llm(traceback, config, graph=graph,
-                                           parent_id=review_node_id)
+    fix_plan, analyze_id = analyze_failure_with_llm(traceback, config, graph=graph,
+                                                    parent_id=review_node_id)
 
     typer.echo(f"🧾 Fix description: {fix_plan.get('fix_description', '')}")
-    apply_fix(fix_plan, graph=graph)
+    apply_code_change(fix_plan, config=config, graph=graph, parent_id=analyze_id,
+                      operation_type="fix")
+

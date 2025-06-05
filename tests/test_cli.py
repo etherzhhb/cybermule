@@ -78,62 +78,6 @@ def test_run_and_fix_with_mock_llm(tmp_path):
         assert result.exit_code == 0
         assert "This is a mock summary of the failure." in result.output
 
-def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
-    traceback_sample = 'Traceback (most recent call last):\n  File "test_file.py", line 10, in test_func\n    assert x == 1'
-
-    file_path = tmp_path / "some_file.py"
-    file_path.write_text("original line\n" * 100)
-    fix_plan = {
-        "fix_description": "...",
-        "edits": [
-            {
-                "file": str(file_path),
-                "line_start": 42,
-                "line_end": 42,
-                "code_snippet": "if x == 1:"
-            }
-        ]
-    }
-
-    with (
-        patch(
-            "cybermule.commands.run_and_fix.run_test",
-            return_value={
-                "failure_count": 1,
-                "tracebacks": {"test_func": traceback_sample},
-            },
-        ),
-        patch(
-            "cybermule.commands.run_and_fix.get_first_failure",
-            return_value=("test_func", traceback_sample),
-        ),
-        patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
-        patch(
-            "cybermule.executors.analyzer.get_prompt_path",
-            return_value="dummy_template.j2",
-        ),
-        patch(
-            "cybermule.executors.analyzer.render_template",
-            return_value="rendered prompt",
-        ),
-    ):
-        mock_llm = MagicMock()
-        mock_llm.generate.return_value = f"<error_summary>This is a mock summary of the failure.</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
-        mock_get_llm.return_value = mock_llm
-
-        runner = CliRunner()
-        result = runner.invoke(
-            app,
-            ["--config=config.yaml", "run-and-fix"],
-            catch_exceptions=False
-        )
-
-        # Print on failure for easier debug
-        assert result.exit_code == 0, f"STDOUT:\n{result.output}\nSTDERR:\n{result.stderr}"
-        lines = file_path.read_text().splitlines()
-        assert len(lines) == 101 # inserted
-        assert lines[42 - 1] == 'if x == 1:' # inserted "if x == 1:" at line 42
-
 def test_run_and_fix_with_multi_edit_plan(tmp_path):
     file_a = tmp_path / "file_a.py"
     file_b = tmp_path / "file_b.py"
@@ -159,6 +103,7 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
     }
 
     with (
+        patch("cybermule.executors.apply_code_change.apply_with_aider", return_value=True),
         patch("cybermule.commands.run_and_fix.run_test", return_value={"failure_count": 1, "tracebacks": {"test_func": "mock traceback"}}),
         patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_func", "mock traceback")),
         patch("cybermule.executors.analyzer.get_llm_provider") as mock_get_llm,
@@ -168,13 +113,13 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
         mock_llm = MagicMock()
         mock_llm.generate.return_value = f"<error_summary>some error</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
         mock_get_llm.return_value = mock_llm
-
+        
         runner = CliRunner()
         result = runner.invoke(app, ["--config=config.yaml", "run-and-fix"], catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "🧾 Fix description: Edit both files" in result.output
-        assert "[apply_fix] ✅ Applied 2 edits across 2 file(s)" in result.output
+        assert "[apply_code_change] ✅ Fix applied using Aider to 2 file(s)." in result.output
 
 def test_run_and_fix_with_test_selection(tmp_path):
     fix_plan = {

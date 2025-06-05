@@ -28,13 +28,15 @@ class LLMProvider:
         mock_response: Optional[str] = None,
         cache_path: Optional[str] = ".llm_cache.json",
         show_token_summary: bool = True,
-        debug_prompt: bool = False
+        debug_prompt: bool = False,
+        thinking_budget_tokens: int = 0,
     ):
         self.model = model
         self.api_key = api_key
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.system_prompt = system_prompt
+        self.thinking_budget_tokens = thinking_budget_tokens
         self.mock_response = mock_response
 
         self.cache_path = Path(cache_path).expanduser() if cache_path else None
@@ -107,6 +109,10 @@ class LLMProvider:
         output_tokens = 0
         usage_tokens = None  # To store usage info from the final chunk
 
+        thinking = None
+        if self.thinking_budget_tokens:
+            thinking = {"type": "enabled", "budget_tokens": self.thinking_budget_tokens}
+
         # Initiate streaming with usage tracking
         response = completion(
             model=self.model,
@@ -115,7 +121,8 @@ class LLMProvider:
             max_tokens=self.max_tokens,
             api_key=self.api_key,
             stream=True,
-            stream_options={"include_usage": True}  # Enables usage info in the final chunk
+            stream_options={"include_usage": True},  # Enables usage info in the final chunk
+            thinking=thinking,
         )
 
         for chunk in response:
