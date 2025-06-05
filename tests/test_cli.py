@@ -5,7 +5,7 @@ from cybermule.cli.main import app
 
 
 def test_cli_help():
-    result = CliRunner().invoke(app, ["--help"])
+    result = CliRunner().invoke(app, ["--help"], catch_exceptions=False)
     assert result.exit_code == 0
     assert "Usage" in result.output or "usage:" in result.output.lower()
 
@@ -30,7 +30,8 @@ def test_refactor_cli_smoke(tmp_path):
                 str(file_to_refactor),
                 "--goal=rename print statement",
                 "--preview",
-            ]
+            ],
+            catch_exceptions=False
         )
 
     assert result.exit_code == 0
@@ -70,7 +71,8 @@ def test_run_and_fix_with_mock_llm(tmp_path):
 
         runner = CliRunner()
         result = runner.invoke(
-            app, ["--config=config.yaml", "run-and-fix", "--summarize-only"]
+            app, ["--config=config.yaml", "run-and-fix", "--summarize-only"],
+            catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -123,6 +125,7 @@ def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
         result = runner.invoke(
             app,
             ["--config=config.yaml", "run-and-fix"],
+            catch_exceptions=False
         )
 
         # Print on failure for easier debug
@@ -167,7 +170,7 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
-        result = runner.invoke(app, ["--config=config.yaml", "run-and-fix"])
+        result = runner.invoke(app, ["--config=config.yaml", "run-and-fix"], catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "🧾 Fix description: Edit both files" in result.output
@@ -199,7 +202,7 @@ def test_run_and_fix_with_test_selection(tmp_path):
 
         runner = CliRunner()
         (tmp_path / "some_file.py").write_text("print('original')\n" * 10)
-        result = runner.invoke(app, ["--config=config.yaml", "run-and-fix", "--test", "test_selected"])
+        result = runner.invoke(app, ["--config=config.yaml", "run-and-fix", "--test", "test_selected"], catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "test_selected" in result.output
@@ -245,7 +248,7 @@ def test_review_commit_smoke(monkeypatch):
         result = runner.invoke(app, [
             "--config=config.yaml",
             "review-commit",
-        ])
+        ], catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Commit SHA:" in result.output

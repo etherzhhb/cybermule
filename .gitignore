@@ -9,3 +9,4 @@ __pycache__/
 coverage.xml
 memory_graph.json
 .llm_cache.json
+.aider*
