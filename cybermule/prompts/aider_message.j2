@@ -1,0 +1,8 @@
+{% for edit in edits %}
+In `{{ edit.file }}`:
+- {{ edit.fix_description | default("Edit") }}
+```python
+{{ edit.code_snippet }}
+```
+
+{% endfor %}
