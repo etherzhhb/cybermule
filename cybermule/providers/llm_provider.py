@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import NamedTuple, Optional, Dict, Any, List, Sequence
 
 import typer
-from litellm import completion
+from litellm import completion, token_counter
 
 # -------------------------------
 # Named result for consistent returns
@@ -99,23 +99,48 @@ class LLMProvider:
         if self.mock_response is not None:
             return LLMResult(text=self.mock_response, input_tokens=0, output_tokens=0)
 
+        # Count prompt tokens before streaming
+        input_tokens = token_counter(model=self.model, messages=messages)
+
+        # Initialize variables for output
+        content = ""
+        output_tokens = 0
+        usage_tokens = None  # To store usage info from the final chunk
+
+        # Initiate streaming with usage tracking
         response = completion(
             model=self.model,
             messages=messages,
             temperature=self.temperature,
             max_tokens=self.max_tokens,
             api_key=self.api_key,
+            stream=True,
+            stream_options={"include_usage": True}  # Enables usage info in the final chunk
         )
-        content = response['choices'][0]['message']['content']
-        usage = response.get("usage", {})
 
-        if self.debug_prompt:
-            typer.echo("\n--- Prompt ---\n" + content + "\n--- End Prompt ---\n")
+        for chunk in response:
+            # Check if the chunk contains content
+            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                chunk_content = chunk.choices[0].delta.content
+                content += chunk_content
+                typer.echo(chunk_content if self.debug_prompt else '.', nl=False)
+                output_tokens += 1  # Increment output token count
+
+            # Check if the chunk contains usage information
+            if hasattr(chunk, 'usage') and chunk.usage:
+                usage_tokens = chunk.usage  # Store usage info from the final chunk
+
+        typer.echo()  # Add newline after streaming
+
+        # If usage info is available, update token counts
+        if usage_tokens:
+            input_tokens = usage_tokens.get("prompt_tokens", input_tokens)
+            output_tokens = usage_tokens.get("completion_tokens", output_tokens)
 
         return LLMResult(
             text=content,
-            input_tokens=usage.get("prompt_tokens", 0),
-            output_tokens=usage.get("completion_tokens", 0)
+            input_tokens=input_tokens,
+            output_tokens=output_tokens
         )
 
     def _track_token_usage(self, input_tokens: int, output_tokens: int) -> None:
