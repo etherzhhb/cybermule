@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional, Dict
 
+import typer
+
 from .ctags_index import _lookup_symbol
 from .tree_sitter_lookup import (
     _extract_symbol_definition,
@@ -21,7 +23,7 @@ def resolve_symbol_in_function(ref_path: Path, ref_function: str, symbol: str, p
         if symbol in candidates:
             return resolve_symbol(symbol, project_root)
     except Exception as e:
-        print(f"[resolve_symbol_in_function] Error for {symbol} in {ref_path}:{ref_function} – {e}")
+        typer.echo(f"[resolve_symbol_in_function] Error for {symbol} in {ref_path}:{ref_function} – {e}")
     return None
 
 def resolve_symbol(symbol: str, project_root: Path) -> Optional[Dict[str, str]]:
@@ -59,7 +61,7 @@ def extract_definition_by_callsite(
             if result:
                 return result
     except Exception as e:
-        print(f"[extract_definition_by_callsite] Failed for {path}:{line}: {e}")
+        typer.echo(f"[extract_definition_by_callsite] Failed for {path}:{line}: {e}")
     return None
 
 

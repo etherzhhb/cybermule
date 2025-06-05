@@ -4,6 +4,7 @@ from tree_sitter import Language, Parser
 
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
+import typer
 
 PY_LANGUAGE = Language(tspython.language())
 
@@ -45,7 +46,7 @@ def _extract_symbol_definition(path: Path, symbol: str) -> Optional[Dict[str, st
                         "snippet": snippet,
                     }
     except Exception as e:
-        print(f"[tree_sitter] Failed to extract {symbol} from {path}: {e}")
+        typer.echo(f"[tree_sitter] Failed to extract {symbol} from {path}: {e}")
     return None
 
 
@@ -80,7 +81,7 @@ def extract_function_at_line(source_path: Path, line_number: int) -> Optional[Di
             }
 
     except Exception as e:
-        print(f"[tree_sitter] Failed to parse {source_path}: {e}")
+        typer.echo(f"[tree_sitter] Failed to parse {source_path}: {e}")
     return None
 
 
@@ -106,7 +107,7 @@ def extract_called_symbols_on_line(path: Path, lineno: int) -> List[str]:
                                 results.append(get_node_text(name_node, source_bytes))
 
     except Exception as e:
-        print(f"[tree_sitter] Failed to extract calls on line {lineno} in {path}: {e}")
+        typer.echo(f"[tree_sitter] Failed to extract calls on line {lineno} in {path}: {e}")
     return results
 
 def extract_function_by_name(path: Path, func_name: str):

@@ -2,6 +2,8 @@ import subprocess
 import shlex
 from typing import List, Sequence
 
+import typer
+
 
 def apply_with_aider(
     file_paths: List[str],
@@ -25,12 +27,12 @@ def apply_with_aider(
     cmd = ["aider", "--message", message] + list(extra_args) + file_paths
 
     try:
-        print(f"[aider_engine] 🛠 Running: {' '.join(shlex.quote(arg) for arg in cmd)}")
+        typer.echo(f"[aider_engine] 🛠 Running: {' '.join(shlex.quote(arg) for arg in cmd)}")
         result = subprocess.run(cmd, check=True)
         return result.returncode == 0
     except subprocess.CalledProcessError as e:
-        print(f"[aider_engine] ❌ Aider failed with return code {e.returncode}")
+        typer.echo(f"[aider_engine] ❌ Aider failed with return code {e.returncode}")
         return False
     except FileNotFoundError:
-        print("[aider_engine] ❌ Aider CLI not found. Is it installed and in your PATH?")
+        typer.echo("[aider_engine] ❌ Aider CLI not found. Is it installed and in your PATH?")
         return False
