@@ -76,3 +76,23 @@ def test_fulfill_context_by_function():
     assert len(result) == 1
     assert result[0]["symbol"] == "bar"
     assert "def bar" in result[0]["snippet"]
+
+def test_fulfill_context_by_lineno():
+    info = [{
+        "symbol": "bar",
+        "ref_path": str(FIXTURES / "calls_imported.py"),
+        "lineno": 4
+    }]
+    result = fulfill_context_requests(info, project_root=FIXTURES)
+    assert len(result) == 1
+    assert result[0]["symbol"] == "bar"
+    assert "def bar" in result[0]["snippet"]
+
+def test_fulfill_context_symbol_only():
+    info = [{
+        "symbol": "foo"
+    }]
+    result = fulfill_context_requests(info, project_root=FIXTURES)
+    assert len(result) == 1
+    assert result[0]["symbol"] == "foo"
+    assert "def foo" in result[0]["snippet"]
