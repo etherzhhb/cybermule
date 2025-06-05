@@ -77,6 +77,10 @@ def get_commit_diff_by_sha(sha: str) -> str:
     """Return the diff for the specified commit SHA."""
     return run_git_command(["show", sha, "--no-color"], capture_output=True)
 
+def get_commits_since(sha: str) -> list[str]:
+    """Return a list of commit SHAs made since the given SHA (excluding the SHA itself)."""
+    output = run_git_command(["log", f"{sha}..HEAD", "--pretty=%H"], capture_output=True)
+    return output.splitlines()
 
 # ─── Repository Introspection ───────────────────────────────────────────────────
 
