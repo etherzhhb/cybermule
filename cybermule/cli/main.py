@@ -9,9 +9,7 @@ from cybermule.commands import (
     review_commit,
     history,
     filter,
-    refactor,
     run_and_fix,
-    smart_thread,
 )
 
 app = typer.Typer()
@@ -64,8 +62,6 @@ def main(
 app.command("review-commit")(review_commit.run)
 app.command("history")(history.run)
 app.command("filter")(filter.run)
-app.command("refactor")(refactor.run)
-app.command("smart_thread")(smart_thread.run)
 app.command("run-and-fix")(run_and_fix.run)
 
 

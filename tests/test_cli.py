@@ -10,35 +10,6 @@ def test_cli_help():
     assert "Usage" in result.output or "usage:" in result.output.lower()
 
 
-def test_refactor_cli_smoke(tmp_path):
-    file_to_refactor = tmp_path / "example.py"
-    file_to_refactor.write_text("print('hello')\n")
-
-    fake_response = "```python\nprint('refactored')\n```"
-
-    with patch("cybermule.executors.run_refactor.get_llm_provider") as mock_get_llm:
-        mock_llm = MagicMock()
-        mock_llm.generate.return_value = fake_response
-        mock_get_llm.return_value = mock_llm
-
-        runner = CliRunner()
-        result = runner.invoke(
-            app,
-            [
-                "--config=config.yaml",
-                "refactor",
-                str(file_to_refactor),
-                "--goal=rename print statement",
-                "--preview",
-            ],
-            catch_exceptions=False
-        )
-
-    assert result.exit_code == 0
-    assert "-print('hello')" in result.output
-    assert "+print('refactored')" in result.output
-
-
 def test_run_and_fix_with_mock_llm(tmp_path):
     traceback_sample = 'Traceback (most recent call last):\n  File "test_file.py", line 10, in test_func\n    assert x == 1'
 
