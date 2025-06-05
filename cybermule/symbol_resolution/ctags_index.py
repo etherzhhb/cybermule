@@ -6,7 +6,7 @@ from typing import Dict, Optional
 _symbol_index_cache: Dict[str, Dict[str, Dict]] = {}
 
 
-def generate_symbol_index(project_root: Path) -> Dict[str, Dict[str, str]]:
+def _generate_symbol_index(project_root: Path) -> Dict[str, Dict[str, str]]:
     """
     Uses ctags to generate a symbol index for Python files in the given directory.
     Returns a dict: symbol -> {file, line, kind}
@@ -24,7 +24,7 @@ def generate_symbol_index(project_root: Path) -> Dict[str, Dict[str, str]]:
     ]
     try:
         output = subprocess.check_output(cmd, universal_newlines=True)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError as e:#
         print(f"[ctags] Failed: {e}")
         return {}
 
@@ -50,6 +50,6 @@ def generate_symbol_index(project_root: Path) -> Dict[str, Dict[str, str]]:
     return index
 
 
-def lookup_symbol(symbol: str, project_root: Path) -> Optional[Dict[str, str]]:
-    index = generate_symbol_index(project_root)
+def _lookup_symbol(symbol: str, project_root: Path) -> Optional[Dict[str, str]]:
+    index = _generate_symbol_index(project_root)
     return index.get(symbol)

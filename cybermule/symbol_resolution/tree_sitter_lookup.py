@@ -23,7 +23,7 @@ def walk_tree(node):
         yield from walk_tree(child)
 
 
-def extract_symbol_definition(path: Path, symbol: str) -> Optional[Dict[str, str]]:
+def _extract_symbol_definition(path: Path, symbol: str) -> Optional[Dict[str, str]]:
     try:
         source = path.read_text(encoding="utf-8")
         source_bytes = source.encode("utf8")
@@ -107,4 +107,36 @@ def extract_called_symbols_on_line(path: Path, lineno: int) -> List[str]:
 
     except Exception as e:
         print(f"[tree_sitter] Failed to extract calls on line {lineno} in {path}: {e}")
+    return results
+
+def extract_function_by_name(path: Path, func_name: str):
+    source = path.read_text(encoding="utf-8")
+    source_bytes = source.encode("utf-8")
+    tree = parse_source(source)
+    root = tree.root_node
+
+    for node in walk_tree(root):
+        if node.type == "function_definition":
+            name_node = node.child_by_field_name("name")
+            if name_node and get_node_text(name_node, source_bytes) == func_name:
+                return node, source, source_bytes
+    return None, source, source_bytes
+
+
+def extract_called_symbols_in_function(path: Path, func_name: str) -> List[str]:
+    node, source, source_bytes = extract_function_by_name(path, func_name)
+    results = []
+    if not node:
+        return results
+
+    for child in walk_tree(node):
+        if child.type == "call":
+            func_node = child.child_by_field_name("function")
+            if func_node:
+                if func_node.type == "identifier":
+                    results.append(get_node_text(func_node, source_bytes))
+                elif func_node.type == "attribute":
+                    name_node = func_node.child_by_field_name("attribute")
+                    if name_node:
+                        results.append(get_node_text(name_node, source_bytes))
     return results
