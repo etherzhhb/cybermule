@@ -170,3 +170,33 @@ def test_review_commit_smoke(monkeypatch):
         assert "Commit SHA:" in result.output
         assert "AI Review" in result.output
         assert "This looks good overall." in result.output
+
+
+def test_suggest_test_smoke(tmp_path):
+    runner = CliRunner()
+    
+    # Create a mock test file
+    test_file = tmp_path / "test_example.py"
+    test_file.write_text("def test_example():\n    assert True\n")
+
+    with (
+        patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="abc123"),
+        patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Add feature"),
+        patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/feature.py b/feature.py"),
+        patch("cybermule.executors.git_review.get_llm_provider") as mock_review_llm,
+        patch("cybermule.executors.analyzer.get_llm_provider") as mock_test_llm,
+        patch("cybermule.executors.analyzer.get_prompt_path", return_value="dummy.j2"),
+        patch("cybermule.executors.analyzer.render_template", return_value="rendered"),
+    ):
+        mock_review_llm.return_value.generate.return_value = "Code review looks good."
+        mock_test_llm.return_value.generate.return_value = "def test_new_feature():\n    assert new_feature() == expected_result"
+
+        result = runner.invoke(app, [
+            "--config=config.yaml",
+            "suggest-test",
+            str(test_file)
+        ], catch_exceptions=False)
+
+        assert result.exit_code == 0
+        assert "Reviewing commit" in result.output
+        assert "Generating additional tests" in result.output

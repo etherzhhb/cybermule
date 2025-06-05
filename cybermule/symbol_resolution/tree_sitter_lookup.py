@@ -1,9 +1,7 @@
 from pathlib import Path
 from typing import Optional, Dict, List
-from tree_sitter import Language, Parser
-
+from tree_sitter import Language, Parser, Node
 import tree_sitter_python as tspython
-from tree_sitter import Language, Parser
 import typer
 
 PY_LANGUAGE = Language(tspython.language())
@@ -24,7 +22,7 @@ def walk_tree(node):
         yield from walk_tree(child)
 
 
-def _extract_symbol_definition(path: Path, symbol: str) -> Optional[Dict[str, str]]:
+def extract_symbol_definition(path: Path, symbol: str) -> Optional[Dict[str, str]]:
     try:
         source = path.read_text(encoding="utf-8")
         source_bytes = source.encode("utf8")
@@ -140,4 +138,64 @@ def extract_called_symbols_in_function(path: Path, func_name: str) -> List[str]:
                     name_node = func_node.child_by_field_name("attribute")
                     if name_node:
                         results.append(get_node_text(name_node, source_bytes))
+    return results
+
+
+
+def extract_test_definitions(file_path: Path, test_identifier: Optional[str] = None) -> List[Dict[str, str]]:
+    results = []
+
+    def extract_function_symbol(identifier: Optional[str]) -> Optional[str]:
+        return identifier.split("::")[-1] if identifier else None
+    
+    test_identifier = extract_function_symbol(test_identifier)
+
+    try:
+        source = file_path.read_text(encoding="utf-8")
+        source_bytes = source.encode("utf-8")
+        tree = parse_source(source)
+        root = tree.root_node
+
+        def is_test_function(node: Node) -> bool:
+            if node.type != "function_definition":
+                return False
+            name_node = node.child_by_field_name("name")
+            if not name_node:
+                return False
+            name = get_node_text(name_node, source_bytes)
+            return name.startswith("test_")
+
+        def is_directly_within_class_or_module(node: Node) -> bool:
+            ancestor = node.parent
+            while ancestor:
+                if ancestor.type == "function_definition":
+                    return False  # nested in a function — skip
+                if ancestor.type in {"class_definition", "module"}:
+                    return True
+                ancestor = ancestor.parent
+            return False
+
+        for node in walk_tree(root):
+            if not is_test_function(node) or not is_directly_within_class_or_module(node):
+                continue
+
+            name_node = node.child_by_field_name("name")
+            symbol = get_node_text(name_node, source_bytes)
+            if test_identifier is not None and symbol != test_identifier:
+                continue
+
+            start_line = node.start_point[0] + 1
+            end_line = node.end_point[0] + 1
+            snippet = "\n".join(source.splitlines()[start_line - 1:end_line])
+            results.append({
+                "file": str(file_path),
+                "symbol": symbol,
+                "start_line": start_line,
+                "traceback_line": start_line,
+                "snippet": snippet,
+            })
+
+    except Exception as e:
+        typer.echo(f"❌ Failed to extract test definitions from {file_path}: {e}", err=True)
+
     return results
