@@ -3,6 +3,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional
 
+import typer
+
 _symbol_index_cache: Dict[str, Dict[str, Dict]] = {}
 
 
@@ -25,7 +27,7 @@ def _generate_symbol_index(project_root: Path) -> Dict[str, Dict[str, str]]:
     try:
         output = subprocess.check_output(cmd, universal_newlines=True)
     except subprocess.CalledProcessError as e:#
-        print(f"[ctags] Failed: {e}")
+        typer.echo(f"[ctags] Failed: {e}")
         return {}
 
     index: Dict[str, Dict[str, str]] = {}
@@ -45,7 +47,7 @@ def _generate_symbol_index(project_root: Path) -> Dict[str, Dict[str, str]]:
                     "kind": kind
                 }
         except Exception as e:
-            print(f"[WARN] Failed to parse ctags JSON line: {e}")
+            typer.echo(f"[WARN] Failed to parse ctags JSON line: {e}")
 
     return index
 
