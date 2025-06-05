@@ -2,6 +2,7 @@ import typer
 from pathlib import Path
 from typing import Optional, Tuple, List, Dict
 
+from cybermule.executors.generate_tests import generate_tests
 from cybermule.executors.git_review import review_commit_with_llm
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.symbol_resolution import extract_test_definitions
@@ -60,6 +61,7 @@ def run(
         typer.echo("[run_and_fix] Reviewing latest commit...")
         review, review_node_id = review_commit_with_llm(config, graph=graph)
         typer.echo(review)
+        typer.echo("✅ Commit review completed")
 
     # Extract test function definitions
     typer.echo("📋 Extracting test definitions...")
@@ -84,27 +86,15 @@ def run(
         if dry_run:
             typer.echo(f"     Preview: {test_def['snippet'][:100]}...")
     
-    
-    
-    
-    typer.echo("✅ Commit review completed")
 
-    # TODO: Generate additional tests based on the commit review and existing tests
-    # This would involve:
-    # 1. Analyzing the commit changes from review_result
-    # 2. Understanding the existing test patterns from test_definitions
-    # 3. Using LLM to generate new tests that complement existing ones
-    # 4. If not dry_run, write the new tests to appropriate files
     
     if dry_run:
         typer.echo("🧪 Generated tests (dry-run mode):")
-        typer.echo("TODO: Use LLM to generate tests based on:")
-        typer.echo(f"  - Commit review (node {review_node_id})")
-        typer.echo(f"  - {len(test_definitions)} existing test patterns")
     else:
         typer.echo("🧪 Generating additional tests...")
-        typer.echo("TODO: Use LLM to generate and apply tests based on:")
-        typer.echo(f"  - Commit review (node {review_node_id})")
-        typer.echo(f"  - {len(test_definitions)} existing test patterns")
+
+    tests, _ = generate_tests(test_samples=test_definitions, config=config,
+                             graph=graph, parent_id=review_node_id)
+    typer.echo(f"Suggested tests:\n{tests}")
     
     typer.echo("✅ Test suggestion completed")
