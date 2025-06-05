@@ -129,19 +129,27 @@ def generate_fix_from_summary(
         response = llm.generate(prompt, history=history, respond_prefix='error_analysis')
         fix_plan = extract_first_json_block(response)
 
+        # Log current reasoning step
         graph.update(node_id, prompt=prompt, response=response,
                      status=f"FIX_ATTEMPT_{round_num + 1}", fix_plan=fix_plan)
 
+        needs_more = fix_plan.get("needs_more_context", False)
         request_info = fix_plan.get("required_info", [])
-        if not request_info:
+
+        if not needs_more or not request_info:
+            graph.update(node_id, status="FIX_FINALIZED", fix_plan=fix_plan)
             return fix_plan, node_id
 
-        fulfill_context_requests(request_info=request_info, context_map=context_map,
-                                 current_contexts=current_contexts,
-                                 project_root=project_root)
+        # Fulfill LLM's request for more symbol context
+        fulfill_context_requests(
+            request_info=request_info,
+            context_map=context_map,
+            current_contexts=current_contexts,
+            project_root=project_root
+        )
 
+    # Return last attempt even if not finalized
     return fix_plan, node_id
-
 
 def analyze_failure_with_llm(
     traceback: str,
