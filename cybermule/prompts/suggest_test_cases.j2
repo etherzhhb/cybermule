@@ -1,12 +1,23 @@
-You are a Python testing expert.
+<existing_tests>
+{% for test in test_samples %}
+[file] {{ test.file }}
+[symbol] {{ test.symbol }}
+[start_line] {{ test.start_line }}
+```python
+{{ test.snippet }}
+```
+{% endfor %}
+</existing_tests>
 
-The following code has missing test coverage on these lines:
-{{ uncovered_lines }}
 
-Here is the source code:
----
-{{ source_code }}
----
+{% if coverage %}
+<coverage_info>
+{{ coverage }}
+</coverage_info>
+{% endif %}
 
-Please suggest Pytest-style unit tests that would cover the missing branches and edge cases. 
-Explain briefly what each test is validating.
+You are an experienced Python test engineer. Based on the existing test cases above, write additional test functions to improve test coverage or capture important edge cases.
+
+Make sure all suggested tests follow Pytest conventions. Only include `def test_...()` functions. You may use the same file(s) or suggest new ones if needed.
+
+Respond with new test code only. Do not explain. Do not repeat existing tests.
