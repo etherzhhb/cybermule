@@ -1,7 +1,10 @@
-boto3
-faiss-cpu
+typer[all]
+networkx
+litellm
 langchain
+faiss-cpu
 pyyaml
-typer
+markdown-it-py
+jinja2
 tree-sitter
 tree-sitter-python

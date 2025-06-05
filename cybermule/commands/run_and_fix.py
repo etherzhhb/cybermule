@@ -42,7 +42,7 @@ def run(
         test_name, traceback = get_first_failure(tracebacks)
 
     typer.echo(f"[run_and_fix] ❌ First failed test: {test_name}\n")
-
+    
     if summarize_only:
         typer.echo("[run_and_fix] 🔍 LLM summary of the failure:")
         summary, _ = summarize_traceback(traceback, config, graph=graph,

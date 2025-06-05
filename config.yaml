@@ -1,20 +1,19 @@
-llm:
-  provider: "ollama"
-  model_id: "mistral"
-  base_url: "http://localhost:11434"
+litellm:
+  model: "claude-3-5-haiku-20241022"
+  max_tokens: 8192
+  debug_prompt: true
+  mock_response: |
+    Ring-ding-ding-ding-dingeringeding!
+    Wa-pa-pa-pa-pa-pa-pow!
+    Hatee-hatee-hatee-ho!
+    Joff-tchoff-tchoffo-tchoffo-tchoff!”
 
+# Option 2: Inline shell commands
 setup_command: |
-  echo "[Setup] Creating virtualenv..."
-  python3 -m venv venv
-  source venv/bin/activate
   pip install -e .
 
 test_command: |
-  echo "[Test] Running full suite..."
-  source venv/bin/activate
-  pytest --maxfail=5 --tb=short -q
+  pytest --tb=short -q
 
 single_test_command: |
-  echo "[Test] Running single test: {test_name}"
-  source venv/bin/activate
   pytest -q -k {test_name} --tb=short

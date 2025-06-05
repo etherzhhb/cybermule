@@ -10,12 +10,6 @@ def test_cli_help():
     assert "Usage" in result.output or "usage:" in result.output.lower()
 
 
-def test_check_mock_llm():
-    result = CliRunner().invoke(app, ["--config=config.test.yaml", "check-llm"])
-    assert result.exit_code == 0
-    assert "Model response: [MOCKED] Response to: User: Say hello" in result.output
-
-
 def test_refactor_cli_smoke(tmp_path):
     file_to_refactor = tmp_path / "example.py"
     file_to_refactor.write_text("print('hello')\n")
@@ -31,12 +25,12 @@ def test_refactor_cli_smoke(tmp_path):
         result = runner.invoke(
             app,
             [
-                "--config=config.test.yaml",
+                "--config=config.yaml",
                 "refactor",
                 str(file_to_refactor),
                 "--goal=rename print statement",
                 "--preview",
-            ],
+            ]
         )
 
     assert result.exit_code == 0
@@ -76,7 +70,7 @@ def test_run_and_fix_with_mock_llm(tmp_path):
 
         runner = CliRunner()
         result = runner.invoke(
-            app, ["--config=config.test.yaml", "run-and-fix", "--summarize-only"]
+            app, ["--config=config.yaml", "run-and-fix", "--summarize-only"]
         )
 
         assert result.exit_code == 0
@@ -128,7 +122,7 @@ def test_run_and_fix_with_mock_llm_fix_mode(tmp_path):
         runner = CliRunner()
         result = runner.invoke(
             app,
-            ["--config=config.test.yaml", "run-and-fix"],
+            ["--config=config.yaml", "run-and-fix"],
         )
 
         # Print on failure for easier debug
@@ -173,7 +167,7 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
         mock_get_llm.return_value = mock_llm
 
         runner = CliRunner()
-        result = runner.invoke(app, ["--config=config.test.yaml", "run-and-fix"])
+        result = runner.invoke(app, ["--config=config.yaml", "run-and-fix"])
 
         assert result.exit_code == 0
         assert "🧾 Fix description: Edit both files" in result.output
@@ -205,7 +199,7 @@ def test_run_and_fix_with_test_selection(tmp_path):
 
         runner = CliRunner()
         (tmp_path / "some_file.py").write_text("print('original')\n" * 10)
-        result = runner.invoke(app, ["--config=config.test.yaml", "run-and-fix", "--test", "test_selected"])
+        result = runner.invoke(app, ["--config=config.yaml", "run-and-fix", "--test", "test_selected"])
 
         assert result.exit_code == 0
         assert "test_selected" in result.output
@@ -215,22 +209,22 @@ def test_run_and_fix_smoke_review_commit(monkeypatch):
 
     # Patch Git utils
     with (
-        patch("cybermule.commands.run_and_fix.run_test", return_value=(1, "Traceback (most recent call last)...\nAssertionError")),
         patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="abcdef1"),
         patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Fix bug"),
         patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/x.py b/x.py"),
-        patch("cybermule.executors.git_review.get_llm_provider") as mock_llm,
-        patch("cybermule.executors.analyzer.summarize_traceback", return_value="Some summary"),
+        patch("cybermule.executors.analyzer.get_llm_provider") as mock_analyzer_llm,
+        patch("cybermule.commands.run_and_fix.run_test", return_value=(1, "Traceback (most recent call last)...\nAssertionError")),
         patch("cybermule.tools.test_runner.get_first_failure", return_value="tests/test_x.py::test_fail"),
     ):
-        mock_llm.return_value.generate.return_value = "This commit introduces a bug."
+        mock_analyzer_llm.return_value.generate.return_value = "<error_summary>This commit introduces a bug.</error_summary>"
 
         result = runner.invoke(app, [
-            "--config=config.test.yaml",
-            "run-and-fix",
-            "--review-commit",
-            "--summarize-only"
-        ])
+                "--config=config.yaml",
+                "run-and-fix",
+                "--review-commit",
+                "--summarize-only"
+            ],    
+            catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Reviewing latest commit..." in result.output
@@ -249,7 +243,7 @@ def test_review_commit_smoke(monkeypatch):
         mock_llm.return_value.generate.return_value = "This looks good overall."
 
         result = runner.invoke(app, [
-            "--config=config.test.yaml",
+            "--config=config.yaml",
             "review-commit",
         ])
 

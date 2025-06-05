@@ -38,8 +38,12 @@ def summarize_traceback(
 
     llm = get_llm_provider(config)
     history = extract_chat_history(parent_id, memory=local_graph)
+
     response = llm.generate(prompt, history=history)
-    error_summary, = extract_tagged_blocks(response, tag="error_summary")
+    try:
+        error_summary, = extract_tagged_blocks(response, tag="error_summary")
+    except ValueError:
+        raise RuntimeError("LLM didnt respond with error_summary")
 
     local_graph.update(node_id, prompt=prompt, response=response, 
                        error_summary=error_summary, status="SUMMARIZED")
