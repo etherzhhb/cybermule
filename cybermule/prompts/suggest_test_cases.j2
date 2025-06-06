@@ -1,3 +1,7 @@
+You are an experienced Python test engineer.
+
+Step 1: Review the existing test cases defined below.
+
 <existing_tests>
 {% for test in test_samples %}
 [file] {{ test.file }}
@@ -9,15 +13,25 @@
 {% endfor %}
 </existing_tests>
 
+All existing tests:
+```python
+{{ all_existing_tests }}
+```
 
-{% if coverage %}
-<coverage_info>
-{{ coverage }}
-</coverage_info>
+{% if hints %}
+Step 2: Analyze the following hints.
+{{ hints }}
+
+Step 3: Compare the existing tests against the hints and check what is missing
 {% endif %}
 
-You are an experienced Python test engineer. Based on the existing test cases above, write additional test functions to improve test coverage or capture important edge cases.
 
-Make sure all suggested tests follow Pytest conventions. Only include `def test_...()` functions. You may use the same file(s) or suggest new ones if needed.
+Based on the analysis in the above steps,  write additional test functions to improve test coverage or capture important edge cases.
+Make sure all the newly suggested tests are in a Python code block, starting with ```python and ending with ```
 
-Respond with new test code only. Do not explain. Do not repeat existing tests.
+Notes:
+
+Make sure all suggested tests follow Pytest conventions.
+Only include `def test_...()` functions. You may use the same file(s) or suggest new ones if needed.
+Do not repeat existing tests.
+

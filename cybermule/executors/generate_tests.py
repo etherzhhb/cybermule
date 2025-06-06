@@ -7,7 +7,7 @@ from cybermule.utils.config_loader import get_prompt_path
 from cybermule.utils.template_utils import render_template
 
 def generate_tests(
-    test_samples: List[Dict],
+    test_samples: List[Dict], hints: str,
     config: Dict[str, Any],
     graph: Optional[MemoryGraph] = None,
     parent_id: Optional[str] = None):
@@ -16,9 +16,14 @@ def generate_tests(
 
     node_id = local_graph.new(f"Suggest tests", parent_id=parent_id)
 
+    files = set(test['file'] for test in test_samples)
+    all_existing_tests = "\n\n".join(Path(file).read_text() for file in files)
 
     prompt_path = get_prompt_path(config, name="suggest_test_cases.j2")
-    prompt = render_template(prompt_path, {"test_samples": test_samples})
+    prompt = render_template(prompt_path,
+                             template_vars={"test_samples": test_samples,
+                                            "all_existing_tests": all_existing_tests,
+                                            "hints": hints})
 
     llm = get_llm_provider(config=config)
     suggestions = llm.generate(prompt)
