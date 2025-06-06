@@ -1,7 +1,6 @@
 import json
 import re
 from typing import List, Optional, Any
-
 from markdown_it import MarkdownIt
 
 
@@ -51,9 +50,6 @@ def extract_code_blocks(text: str) -> List[str]:
         t.content for t in tokens
         if t.type == "fence" and t.info.strip() in ("python", "")
     ]
-
-import re
-from typing import List
 
 
 def extract_tagged_blocks(text: str, tag: str) -> List[str]:

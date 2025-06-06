@@ -24,7 +24,9 @@ def apply_with_aider(
     if not file_paths:
         raise ValueError("[aider_engine] No file paths provided to Aider.")
 
-    cmd = ["aider", "--yes-always", "--message", message] + list(extra_args) + file_paths
+    cmd = ["aider", "--yes-always", "--no-show-model-warnings", "--message", message]
+    cmd.extend(extra_args)
+    cmd.extend(file_paths)
 
     try:
         typer.echo(f"[aider_engine] 🛠 Running: {' '.join(shlex.quote(arg) for arg in cmd)}")
