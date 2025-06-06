@@ -28,6 +28,8 @@
 
 ### 🛠️ Install
 
+`aider` only work with python 3.12 in mac
+
 Install required dependencies:
 
 ```bash
@@ -36,8 +38,7 @@ brew install --HEAD universal-ctags/universal-ctags/universal-ctags  # macOS
 sudo apt install universal-ctags  # Ubuntu
 
 # Install Aider
-pip install aider-install
-aider-install
+pip install aider-chat
 
 # Clone and install Cybermule
 git clone https://github.com/etherzhhb/cybermule.git
