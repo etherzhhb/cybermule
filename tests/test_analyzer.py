@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from cybermule.executors import analyzer
 from unittest.mock import patch
 
@@ -215,6 +216,42 @@ def test_fix_plan_multi_round_retry(
     assert fix["fix_description"] == "Fix helper bug"
     assert fix["edits"][0]["symbol"] == "helper"
     assert fix["edits"][0]["file"] == "project/fail.py"
+
+@pytest.mark.parametrize("lineno_value,expected", [
+    (None, None),
+    (42, 42),
+    ('42', 42),
+    ("around line 42", None),
+])
+def test_fulfill_context_requests_lineno_handling(lineno_value, expected):
+    """Test that fulfill_context_requests handles different lineno values correctly."""
+    from cybermule.executors.analyzer import fulfill_context_requests
+    
+    # Create a minimal required_info with the test lineno value
+    required_info = [{
+        "symbol": "test_symbol",
+        "lineno": lineno_value
+    }]
+    
+    # Mock the symbol resolution functions to avoid actual file system access
+    with patch("cybermule.executors.analyzer.resolve_symbol") as mock_resolve:
+        # Make resolve_symbol return a valid result
+        mock_resolve.return_value = {
+            "file": "test_file.py",
+            "symbol": "test_symbol",
+            "snippet": "def test_symbol(): pass",
+            "start_line": 10
+        }
+        
+        # This should not raise an exception for the test cases
+        results = fulfill_context_requests(required_info, Path("."))
+        
+        # Verify the lineno was processed correctly
+        if expected is None:
+            assert results[0]["traceback_line"] == 10  # Should fall back to start_line
+        else:
+            assert results[0]["traceback_line"] == expected
+
 
 @patch("cybermule.executors.analyzer.get_llm_provider")
 @patch("cybermule.executors.analyzer.get_prompt_path")

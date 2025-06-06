@@ -68,7 +68,14 @@ def fulfill_context_requests(required_info: List[Dict], project_root: Path) -> L
         symbol = info.get("symbol")
         ref_path = info.get("ref_path")
         ref_function = info.get("ref_function")
-        lineno = info.get("lineno")
+        # The required_info returned by llm can be fuzzy,
+        # lineno may not be well-formed.
+        # we may get something like "around line 42"
+        try:
+            lineno = int(info.get("lineno"))
+        except (ValueError, TypeError):
+            lineno = None
+
         result = None
 
         # Strategy 1: Use ref_function inside known file
