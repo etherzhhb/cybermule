@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from cybermule.executors.apply_code_change import apply_code_change
+from cybermule.executors.apply_code_change import apply_code_change, describe_change_plan
 
 fake_plan = {
     "fix_description": "Refactor function",
@@ -19,7 +19,10 @@ fake_plan = {
 @patch("cybermule.executors.apply_code_change.get_latest_commit_sha", return_value="oldsha000")
 def test_apply_success(mock_sha, mock_commits, mock_aider):
     mock_graph = MagicMock()
-    node_id = apply_code_change(fake_plan, config={}, graph=mock_graph, operation_type="refactor")
+    file_paths, message = describe_change_plan(fake_plan, config={})
+    node_id = apply_code_change(description='fake',
+                                file_paths=file_paths, message=message,
+                                config={}, graph=mock_graph, operation_type="refactor")
     
     assert node_id is not None
     mock_aider.assert_called_once()
@@ -32,11 +35,13 @@ def test_apply_success(mock_sha, mock_commits, mock_aider):
 @patch("cybermule.executors.apply_code_change.run_git_command")
 def test_apply_failure_rolls_back(mock_git, mock_sha, mock_aider):
     with pytest.raises(RuntimeError):
-        apply_code_change(fake_plan, config={}, graph=None)
+      file_paths, message = describe_change_plan(fake_plan, config={})
+      apply_code_change(description='fake', file_paths=file_paths, message=message,
+                        config={}, graph=None)
 
     mock_git.assert_called_with(["reset", "--hard", "oldsha000"])
 
 
 def test_missing_edits_raises():
     with pytest.raises(ValueError):
-        apply_code_change({}, config={})
+      describe_change_plan({}, config={})

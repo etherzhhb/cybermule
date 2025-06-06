@@ -9,7 +9,7 @@ from cybermule.utils.git_utils import get_commits_since, get_latest_commit_sha, 
 from cybermule.utils.template_utils import render_template
 
 
-def _prepare_aider_inputs(change_plan: Dict, config: dict) -> Tuple[List[str], str]:
+def describe_change_plan(change_plan: Dict, config: dict) -> Tuple[List[str], str]:
     """
     Helper function to prepare file paths and message for Aider.
     
@@ -20,6 +20,9 @@ def _prepare_aider_inputs(change_plan: Dict, config: dict) -> Tuple[List[str], s
     Returns:
         Tuple of (file_paths, message)
     """
+    if "edits" not in change_plan:
+        raise ValueError("[apply_code_change] No edits found in change plan.")
+
     # Collect all files touched
     touched_files = {edit["file"] for edit in change_plan["edits"]}
     file_paths = list(touched_files)
@@ -38,21 +41,15 @@ def _prepare_aider_inputs(change_plan: Dict, config: dict) -> Tuple[List[str], s
 
 
 def apply_code_change(
-    change_plan: Dict,
+    description, message, file_paths,
     config: dict,
     graph: Optional[MemoryGraph] = None,
     parent_id: Optional[str] = None,
     operation_type: str = "fix"
 ) -> Optional[str]:
 
-    if "edits" not in change_plan:
-        raise ValueError("[apply_code_change] No edits found in change plan.")
-
     pre_sha = get_latest_commit_sha()
     
-    # Get file paths and message from helper function
-    file_paths, message = _prepare_aider_inputs(change_plan, config)
-
     # NEW: extract CLI args from config
     extra_args = get_aider_extra_args(config)
 
@@ -72,8 +69,7 @@ def apply_code_change(
         node_id = graph.new(f"Apply {operation_type}", parent_id=parent_id,
                             tags=[operation_type])
         graph.update(node_id,
-            status="CHANGE_APPLIED",
-            fix_description=change_plan.get("fix_description", ""),
+            status="CHANGE_APPLIED", description=description,
             message=message, files=file_paths, commits=post_shas
         )
 
