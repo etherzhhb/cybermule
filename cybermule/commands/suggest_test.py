@@ -32,6 +32,7 @@ def run(
         ...,
         help="Path to existing test file or specific test using pytest notation (e.g., path/test.py::test_function)",
     ),
+    hints: str = typer.Option("", help="Refactoring goal, e.g., 'extract class', 'rename variable'"),
     review_commit: bool = typer.Option(False, help="Run a commit review before analyzing test failure."),
     dry_run: bool = typer.Option(
         False,
@@ -41,22 +42,22 @@ def run(
 ):
     """Suggest additional tests based on existing test file and commit review."""
     config = ctx.obj["config"]
-    
+
     # Parse the test path to handle pytest notation
     file_path, test_identifier = parse_pytest_path(test_path)
-    
+
     # Validate that the file exists
     if not file_path.exists():
         typer.echo(f"❌ Test file does not exist: {file_path}", err=True)
         raise typer.Exit(1)
-    
+
     if not file_path.is_file():
         typer.echo(f"❌ Path is not a file: {file_path}", err=True)
         raise typer.Exit(1)
-    
+
     # Initialize memory graph
     graph = MemoryGraph()
-    
+
     # First, review the commit
     typer.echo("🔍 Reviewing commit...")
 
@@ -70,20 +71,20 @@ def run(
     # Extract test function definitions
     typer.echo("📋 Extracting test definitions...")
     test_definitions = extract_test_definitions(file_path, test_identifier)
-    
+
     if not test_definitions:
         typer.echo(f"❌ No test definitions found in {file_path}", err=True)
         if test_identifier:
             typer.echo(f"   Specifically looking for: {test_identifier}")
         raise typer.Exit(1)
-    
+
     # Log what we extracted
     typer.echo(f"📋 Using test file: {file_path}")
     if test_identifier:
         typer.echo(f"🎯 Extracted specific test: {test_identifier}")
     else:
         typer.echo(f"🎯 Extracted {len(test_definitions)} test functions")
-    
+
     # Display extracted test information
     for i, test_def in enumerate(test_definitions, 1):
         typer.echo(f"  {i}. {test_def['symbol']} (line {test_def['start_line']})")
@@ -93,10 +94,11 @@ def run(
     typer.echo("🧪 Generating additional tests...")
 
     tests, suggest_test_id = generate_tests(
-      test_samples=test_definitions, config=config, graph=graph,
+      test_samples=test_definitions, hints=hints, config=config, graph=graph,
       parent_id=review_node_id)
 
-    tests_code = extract_code_blocks(tests)
+    tests_code = '\n\n'.join(extract_code_blocks(tests))
+
     typer.echo(f"Suggested tests:\n{tests_code}")
 
     if  dry_run:

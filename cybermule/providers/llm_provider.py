@@ -78,7 +78,7 @@ class LLMProvider:
         if final_system_prompt:
             messages = [{"role": "system", "content": final_system_prompt}] + messages
         messages.append({"role": "user", "content": prompt})
-        if respond_prefix:
+        if respond_prefix and not self.thinking_budget_tokens:
             messages.append({"role": "assistant", "content": respond_prefix})
         return messages
 
