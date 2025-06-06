@@ -14,6 +14,7 @@ class LLMResult(NamedTuple):
     text: str
     input_tokens: int = 0
     output_tokens: int = 0
+    reasoning_text: str = ''
 
 
 # === Self-contained LLM Provider === #
@@ -106,6 +107,7 @@ class LLMProvider:
 
         # Initialize variables for output
         content = ""
+        reasoning_content = ""
         output_tokens = 0
         usage_tokens = None  # To store usage info from the final chunk
 
@@ -125,17 +127,34 @@ class LLMProvider:
             thinking=thinking,
         )
 
-        for chunk in response:
-            # Check if the chunk contains content
-            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-                chunk_content = chunk.choices[0].delta.content
-                content += chunk_content
-                typer.echo(chunk_content if self.debug_prompt else '.', nl=False)
-                output_tokens += 1  # Increment output token count
+        is_thinking = False
 
+        for chunk in response:
             # Check if the chunk contains usage information
             if hasattr(chunk, 'usage') and chunk.usage:
-                usage_tokens = chunk.usage  # Store usage info from the final chunk
+              usage_tokens = chunk.usage  # Store usage info from the final chunk
+
+            if not chunk.choices or not chunk.choices[0].delta:
+              continue
+
+            delta = chunk.choices[0].delta
+            delta_reasoning_content = getattr(delta, 'reasoning_content', '')
+
+            # Check if the chunk contains content
+            if delta_reasoning_content:
+              typer.echo(typer.style(delta_reasoning_content, dim=True) if self.debug_prompt else '.', nl=False)
+              reasoning_content += delta_reasoning_content
+              is_thinking = True
+
+            if delta.content:
+              if is_thinking:
+                typer.echo()  # Add newline to separate reasoning_content
+                is_thinking = False
+
+              chunk_content = delta.content
+              content += chunk_content
+              typer.echo(chunk_content if self.debug_prompt else '.', nl=False)
+              output_tokens += 1  # Increment output token count
 
         typer.echo()  # Add newline after streaming
 
@@ -147,7 +166,8 @@ class LLMProvider:
         return LLMResult(
             text=content,
             input_tokens=input_tokens,
-            output_tokens=output_tokens
+            output_tokens=output_tokens,
+            reasoning_text=reasoning_content
         )
 
     def _track_token_usage(self, input_tokens: int, output_tokens: int) -> None:

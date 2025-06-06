@@ -10,3 +10,5 @@ coverage.xml
 memory_graph.json
 .llm_cache.json
 .aider*
+.DS_Store
+venv/
