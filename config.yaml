@@ -8,7 +8,6 @@ litellm:
     Hatee-hatee-hatee-ho!
     Joff-tchoff-tchoffo-tchoffo-tchoff!”
 
-# Option 2: Inline shell commands
 setup_command: |
   pip install -e .
 

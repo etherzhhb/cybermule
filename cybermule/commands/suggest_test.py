@@ -2,10 +2,14 @@ import typer
 from pathlib import Path
 from typing import Optional, Tuple, List, Dict
 
+from cybermule.executors.apply_code_change import apply_code_change
 from cybermule.executors.generate_tests import generate_tests
 from cybermule.executors.git_review import review_commit_with_llm
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.symbol_resolution import extract_test_definitions
+from cybermule.utils.config_loader import get_prompt_path
+from cybermule.utils.parsing import extract_code_blocks
+from cybermule.utils.template_utils import render_template
 
 
 def parse_pytest_path(test_spec: str) -> Tuple[Path, Optional[str]]:
@@ -85,16 +89,29 @@ def run(
         typer.echo(f"  {i}. {test_def['symbol']} (line {test_def['start_line']})")
         if dry_run:
             typer.echo(f"     Preview: {test_def['snippet'][:100]}...")
-    
 
-    
-    if dry_run:
-        typer.echo("🧪 Generated tests (dry-run mode):")
-    else:
-        typer.echo("🧪 Generating additional tests...")
+    typer.echo("🧪 Generating additional tests...")
 
-    tests, _ = generate_tests(test_samples=test_definitions, config=config,
-                             graph=graph, parent_id=review_node_id)
-    typer.echo(f"Suggested tests:\n{tests}")
-    
+    tests, suggest_test_id = generate_tests(
+      test_samples=test_definitions, config=config, graph=graph,
+      parent_id=review_node_id)
+
+    tests_code = extract_code_blocks(tests)
+    typer.echo(f"Suggested tests:\n{tests_code}")
+
+    if  dry_run:
+        typer.echo("🎯 Dry run, not applying tests")
+        return
+
+
+    prompt_path = get_prompt_path(config, "aider_integrate_test.j2")
+    message = render_template(Path(prompt_path),
+                             template_vars={"FILE": file_path,
+                                            "TEST_CODE": tests_code})
+
+    apply_code_change(description="Add extra test",
+                      file_paths=[str(file_path)], message=message,
+                      config=config, graph=graph, parent_id=suggest_test_id,
+                      operation_type="add test")
+
     typer.echo("✅ Test suggestion completed")

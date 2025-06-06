@@ -180,6 +180,7 @@ def test_suggest_test_smoke(tmp_path):
     test_file.write_text("def test_example():\n    assert True\n")
 
     with (
+        patch("cybermule.executors.apply_code_change.apply_with_aider", return_value=True),
         patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="abc123"),
         patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Add feature"),
         patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/feature.py b/feature.py"),
