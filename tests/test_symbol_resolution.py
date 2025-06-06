@@ -96,3 +96,31 @@ def test_fulfill_context_symbol_only():
     assert len(result) == 1
     assert result[0]["symbol"] == "foo"
     assert "def foo" in result[0]["snippet"]
+
+
+def test_fulfill_context_with_non_numeric_lineno():
+    """Test fulfill_context_requests with various non-numeric lineno types."""
+    invalid_values = [None, {}, [], True]
+    
+    for invalid_value in invalid_values:
+        info = [{
+            "symbol": "bar",
+            "ref_path": str(FIXTURES / "calls_imported.py"),
+            "lineno": invalid_value
+        }]
+        # Dont fail
+        fulfill_context_requests(info, project_root=FIXTURES)
+
+
+def test_fulfill_context_with_string_lineno():
+    """Test fulfill_context_requests with a string lineno that can be converted to an int."""
+    info = [{
+        "symbol": "bar",
+        "ref_path": str(FIXTURES / "calls_imported.py"),
+        "lineno": "4"  # Valid string that can be converted to int
+    }]
+    
+    result = fulfill_context_requests(info, project_root=FIXTURES)
+    assert len(result) == 1
+    assert result[0]["symbol"] == "bar"
+    assert "def bar" in result[0]["snippet"]

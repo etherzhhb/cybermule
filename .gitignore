@@ -12,3 +12,4 @@ memory_graph.json
 .aider*
 .DS_Store
 venv/
+.ctags
