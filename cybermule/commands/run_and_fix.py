@@ -24,23 +24,7 @@ def run(
         review, review_node_id = review_commit_with_llm(config, graph=graph)
         typer.echo(review)
 
-    typer.echo("[run_and_fix] Running pytest...")
-
-    if test:
-        typer.echo(f"[run_and_fix] Running single test: {test}")
-        passed, traceback = run_single_test(test_name=test, config=config)
-        if passed:
-            typer.echo("[run_and_fix] ✅ Test passed. Nothing to fix.")
-            raise typer.Exit(code=0)
-        test_name = test
-        failure_count = 1
-    else:
-        typer.echo("[run_and_fix] Running full test suite...")
-        failure_count, tracebacks = run_test(config)
-        if failure_count == 0:
-            typer.echo("[run_and_fix] ✅ All tests passed. Nothing to fix.")
-            raise typer.Exit(code=0)
-        test_name, traceback = get_first_failure(tracebacks)
+    test_name, traceback = run_and_get_first_failure(test, config)
 
     typer.echo(f"[run_and_fix] ❌ First failed test: {test_name}\n")
     
@@ -49,7 +33,7 @@ def run(
         summary, _ = summarize_traceback(traceback, config, graph=graph,
                                         parent_id=review_node_id)
         typer.echo(summary)
-        return
+        raise typer.Exit(code=0)
 
     typer.echo("[run_and_fix] 🛠 LLM proposed fix:")
     fix_plan, analyze_id = analyze_failure_with_llm(traceback, config, graph=graph,
@@ -66,3 +50,21 @@ def run(
                       config=config, graph=graph, parent_id=analyze_id,
                       operation_type="fix")
 
+
+def run_and_get_first_failure(test, config):
+  typer.echo("[run_and_fix] Running pytest...")
+  if test:
+    typer.echo(f"[run_and_fix] Running single test: {test}")
+    passed, traceback = run_single_test(test_name=test, config=config)
+    if passed:
+      typer.echo("[run_and_fix] ✅ Test passed. Nothing to fix.")
+      raise typer.Exit(code=0)
+    return test, traceback
+
+  typer.echo("[run_and_fix] Running full test suite...")
+  failure_count, tracebacks = run_test(config)
+  if failure_count == 0:
+    typer.echo("[run_and_fix] ✅ All tests passed. Nothing to fix.")
+    raise typer.Exit(code=0)
+
+  return get_first_failure(tracebacks)

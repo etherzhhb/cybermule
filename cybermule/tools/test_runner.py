@@ -4,7 +4,8 @@ from pathlib import Path
 import typer
 
 
-def run_shell_block(label: str, script_path: str | None = None, command_block: str | None = None) -> str:
+def run_shell_block(label: str, script_path: str | None = None,
+                    command_block: str | None = None, may_fail=False) -> str:
     """
     Execute a shell script or inline shell command block and return combined output.
 
@@ -30,10 +31,10 @@ def run_shell_block(label: str, script_path: str | None = None, command_block: s
 
     output = result.stdout + "\n" + result.stderr
 
-    if result.returncode != 0:
-        raise RuntimeError(f"[{label}] Failed with exit code {result.returncode}:\n{output.strip()}")
+    if may_fail or result.returncode == 0:
+        return output
 
-    return output
+    raise RuntimeError(f"[{label}] Failed with exit code {result.returncode}:\n{output.strip()}")
 
 
 def prepare_test_environment(config: dict) -> None:
@@ -48,7 +49,6 @@ def prepare_test_environment(config: dict) -> None:
         script_path=config.get("setup_script"),
         command_block=config.get("setup_command"),
     )
-
 
 def run_test(config: dict) -> tuple[int, list[str]]:
     """
@@ -67,13 +67,30 @@ def run_test(config: dict) -> tuple[int, list[str]]:
             label="Test",
             script_path=config.get("test_script"),
             command_block=config.get("test_command"),
+            may_fail=True,
         )
 
-        failures = re.findall(r"=+ FAILURES =+\n(.*?)\n=+", output, re.DOTALL)
-        return len(failures), failures
+        return extract_failures_blocks(output)
+
     except Exception as e:
         typer.echo(f"[run_test] Exception: {e}")
         return -1, []
+
+
+def extract_failures_blocks(output):
+  # Find the full FAILURES section - accommodate variable number of equal signs
+  # and match until "short test summary info" or end of string
+  failures_section_match = re.search(r"={3,} FAILURES ={3,}\n(.*?)(?:={3,} short test summary info ={3,}|$)", output,
+                                     re.DOTALL)
+  if not failures_section_match:
+    return 0, []
+
+  failures_section = failures_section_match.group(1)
+  # Now extract each failure block that starts with test name surrounded by underscores
+  pattern = r"_{6,} ([^\n]+) _{6,}\n(.*?)(?=(?:_{6,} |$))"
+  matches = re.findall(pattern, failures_section, re.DOTALL)
+  failure_blocks = [f"{name}\n{trace.strip()}" for name, trace in matches]
+  return len(failure_blocks), failure_blocks
 
 
 def run_single_test(test_name: str, config: dict) -> tuple[bool, str]:
@@ -94,13 +111,17 @@ def run_single_test(test_name: str, config: dict) -> tuple[bool, str]:
 
         if "single_test_command" in config:
             command = config["single_test_command"].format(test_name=test_name)
-            output = run_shell_block("SingleTest", command_block=command)
+            output = run_shell_block("SingleTest",
+                                     command_block=command,
+                                     may_fail=True)
         elif "single_test_script" in config:
-            output = run_shell_block("SingleTest", script_path=config["single_test_script"])
+            output = run_shell_block("SingleTest",
+                                     script_path=config["single_test_script"],
+                                     may_fail=True)
         else:
             raise ValueError("No single test runner configured in config")
 
-        match = re.search(r"=+ FAILURES =+\n(.*?)\n=+", output, re.DOTALL)
+        match = re.search(r"={3,} FAILURES ={3,}\n(.*?)(?:={3,} short test summary info ={3,}|$)", output, re.DOTALL)
         if match:
             return False, match.group(1).strip()
         return True, ""
@@ -122,6 +143,6 @@ def get_first_failure(tracebacks: list[str]) -> tuple[str, str]:
         return "", ""
 
     traceback = tracebacks[0]
-    match = re.search(r"_______+ ([\w\.\-/:]+) ", traceback)
+    match = re.search(r"_{6,} ([\w\.\-/:]+) ", traceback)
     test_name = match.group(1) if match else "unknown"
     return test_name, traceback
