@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 import typer
 from typer import Context
@@ -13,7 +14,13 @@ def run(
     ctx: Context,
     summarize_only: bool = typer.Option(False, help="Only summarize the failure without applying a fix."),
     test: Optional[str] = typer.Option(None, help="Run only the specified test (e.g. path/to/test.py::func)"),
-    review_commit: bool = typer.Option(False, help="Run a commit review before analyzing test failure.")
+    log: Optional[Path] = typer.Option(None, exists=True, help="Read the log file for stack trace instead of running pytest"),
+    review_commit: bool = typer.Option(False, help="Run a commit review before analyzing test failure."),
+    dry_run: bool = typer.Option(
+      False,
+      "--dry-run",
+      help="Only show new tests without applying them",
+    ),
 ):
     config = ctx.obj.get("config", {})
     graph = MemoryGraph()
@@ -24,16 +31,19 @@ def run(
         review, review_node_id = review_commit_with_llm(config, graph=graph)
         typer.echo(review)
 
-    test_name, traceback = run_and_get_first_failure(test, config)
-
-    typer.echo(f"[run_and_fix] ❌ First failed test: {test_name}\n")
+    if log is not None:
+        typer.echo(f"[run_and_fix] ❌ reading stack trace from log: {log}\n")
+        traceback = log.read_text()
+    else:
+        test_name, traceback = run_and_get_first_failure(test, config)
+        typer.echo(f"[run_and_fix] ❌ First failed test: {test_name}\n")
     
     if summarize_only:
         typer.echo("[run_and_fix] 🔍 LLM summary of the failure:")
         summary, _ = summarize_traceback(traceback, config, graph=graph,
                                         parent_id=review_node_id)
         typer.echo(summary)
-        raise typer.Exit(code=0)
+        return
 
     typer.echo("[run_and_fix] 🛠 LLM proposed fix:")
     fix_plan, analyze_id = analyze_failure_with_llm(traceback, config, graph=graph,
@@ -45,6 +55,11 @@ def run(
 
 
     typer.echo(f"🧾 Fix description: {fix_description}")
+
+    if  dry_run:
+        typer.echo("🎯 Dry run, not applying tests")
+        return
+
     apply_code_change(description=fix_description,
                       file_paths=file_paths, message=message,
                       config=config, graph=graph, parent_id=analyze_id,

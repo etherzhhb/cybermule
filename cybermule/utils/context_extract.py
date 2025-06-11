@@ -6,17 +6,21 @@ import typer
 
 from cybermule.symbol_resolution import extract_function_at_line
 
-def extract_locations(traceback: str) -> List[Dict]: 
+def extract_locations(traceback: str, drop_site_package_prefix=True) -> List[Dict]:
     locations = []
 
     # classic Python style
     classic = re.findall(r'File "(.+?)", line (\d+), in (.+)', traceback)
     for file, line, func in classic:
+        if drop_site_package_prefix:
+            file = extract_module_path(file)
         locations.append({"file": file, "line": int(line), "function": func})
 
     # pytest style (allow leading whitespace)
     pytest_style = re.findall(r'^\s*([^\s:]+):(\d+): in (.+)$', traceback, flags=re.MULTILINE)
     for file, line, func in pytest_style:
+        if drop_site_package_prefix:
+            file = extract_module_path(file)
         locations.append({"file": file, "line": int(line), "function": func})
 
     return locations
@@ -48,3 +52,11 @@ def get_context_snippets(locations: List[Dict], fallback_window: int = 5) -> Lis
             context_snippets.append(match)
 
     return context_snippets
+
+def extract_module_path(full_path):
+    path = Path(full_path)
+    parts = path.parts
+    if "site-packages" in parts:
+        idx = parts.index("site-packages")
+        return str(Path(*parts[idx+1:]))
+    return full_path
