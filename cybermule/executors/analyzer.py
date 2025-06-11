@@ -133,6 +133,8 @@ def generate_fix_from_summary(
     history = extract_chat_history(parent_id, memory=graph)
     llm = get_llm_provider(config)
 
+    fix_plan = {}
+
     for round_num in range(max_rounds):
         prompt_path = get_prompt_path(config, "generate_fix_from_summary.j2")
         prompt = render_template(Path(prompt_path), {
