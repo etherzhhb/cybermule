@@ -45,7 +45,6 @@ def run_llm_task(
     node_id: str,
     prompt_template: str,
     variables: dict,
-    parent_id: Optional[str] = None,
     respond_prefix: Optional[str] = None,
     status: str = "COMPLETED",
     tags: Optional[list] = None,
@@ -72,7 +71,7 @@ def run_llm_task(
     prompt = render_template(Path(prompt_path), template_vars=variables)
 
     llm = get_llm_provider(config)
-    history = extract_chat_history(parent_id, memory=graph) if parent_id else None
+    history = extract_chat_history(graph.parent_id_of(node_id), memory=graph)
     response = llm.generate(prompt, history=history, respond_prefix=respond_prefix)
 
     log_llm_task(
