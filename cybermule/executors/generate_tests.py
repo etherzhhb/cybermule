@@ -2,9 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from cybermule.memory.memory_graph import MemoryGraph
-from cybermule.providers.llm_provider import get_llm_provider
-from cybermule.utils.config_loader import get_prompt_path
-from cybermule.utils.template_utils import render_template
+from cybermule.memory.tracker import run_llm_task
 
 def generate_tests(
     test_samples: List[Dict], hints: str,
@@ -19,14 +17,18 @@ def generate_tests(
     files = set(test['file'] for test in test_samples)
     all_existing_tests = "\n\n".join(Path(file).read_text() for file in files)
 
-    prompt_path = get_prompt_path(config, name="suggest_test_cases.j2")
-    prompt = render_template(prompt_path,
-                             template_vars={"test_samples": test_samples,
-                                            "all_existing_tests": all_existing_tests,
-                                            "hints": hints})
+    suggestions = run_llm_task(
+        config=config,
+        graph=local_graph,
+        node_id=node_id,
+        prompt_template="suggest_test_cases.j2",
+        variables={
+            "test_samples": test_samples,
+            "all_existing_tests": all_existing_tests,
+            "hints": hints
+        },
+        status="SUGGESTED",
+        tags=["suggestion"]
+    )
 
-    llm = get_llm_provider(config=config)
-    suggestions = llm.generate(prompt)
-
-    local_graph.update(node_id, prompt=prompt, response=suggestions, status="SUGGESTED")
     return suggestions, node_id if graph else None

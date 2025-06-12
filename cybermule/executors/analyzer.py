@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional, List
 
+from cybermule.memory.tracker import run_llm_task
 from cybermule.providers.llm_provider import get_llm_provider
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.symbol_resolution import (
@@ -13,10 +14,7 @@ from cybermule.utils.context_extract import (
     extract_locations,
     get_context_snippets,
 )
-from cybermule.utils.template_utils import render_template
-from cybermule.utils.config_loader import get_prompt_path
 from cybermule.utils.parsing import extract_first_json_block, extract_tagged_blocks
-from cybermule.memory.history_utils import extract_chat_history
 
 
 def summarize_traceback(
@@ -31,23 +29,23 @@ def summarize_traceback(
     Returns:
         (summary: str, node_id: Optional[str])
     """
-    prompt_path = get_prompt_path(config, "summarize_traceback.j2")
-    prompt = render_template(Path(prompt_path), {"TRACEBACK": traceback})
-
     local_graph = graph or MemoryGraph()
     node_id = local_graph.new("Summarize traceback", parent_id=parent_id, tags=["traceback"])
 
-    llm = get_llm_provider(config)
-    history = extract_chat_history(parent_id, memory=local_graph)
+    summary = run_llm_task(
+        config=config,
+        graph=local_graph,
+        node_id=node_id,
+        prompt_template="summarize_traceback.j2",
+        variables={"TRACEBACK": traceback},
+        status="SUMMARIZED")
 
-    response = llm.generate(prompt, history=history)
     try:
-        error_summary, = extract_tagged_blocks(response, tag="error_summary")
+        error_summary, = extract_tagged_blocks(summary, tag="error_summary")
     except ValueError:
         raise RuntimeError("LLM didnt respond with error_summary")
 
-    local_graph.update(node_id, prompt=prompt, response=response, 
-                       error_summary=error_summary, status="SUMMARIZED")
+    local_graph.update(node_id, error_summary=error_summary)
 
     return error_summary, node_id if graph else None
 
@@ -130,24 +128,26 @@ def generate_fix_from_summary(
 
     current_contexts = base_contexts[:]
     node_id = graph.new("Generate fix plan", parent_id=parent_id, tags=["fix"])
-    history = extract_chat_history(parent_id, memory=graph)
-    llm = get_llm_provider(config)
 
     fix_plan = {}
 
     for round_num in range(max_rounds):
-        prompt_path = get_prompt_path(config, "generate_fix_from_summary.j2")
-        prompt = render_template(Path(prompt_path), {
-            "ERROR_SUMMARY": error_summary,
-            "CODE_CONTEXTS": current_contexts
-        })
+        response = run_llm_task(
+            config=config,
+            graph=graph,
+            node_id=node_id,
+            prompt_template="generate_fix_from_summary.j2",
+            variables={
+                "ERROR_SUMMARY": error_summary,
+                "CODE_CONTEXTS": current_contexts
+            },
+            status=f"FIX_ATTEMPT_{round_num + 1}",
+        )
 
-        response = llm.generate(prompt, history=history, respond_prefix='error_analysis')
         fix_plan = extract_first_json_block(response)
 
         # Log current reasoning step
-        graph.update(node_id, prompt=prompt, response=response,
-                     status=f"FIX_ATTEMPT_{round_num + 1}", fix_plan=fix_plan)
+        graph.update(node_id, fix_plan=fix_plan)
 
         needs_more = fix_plan.get("needs_more_context", False)
         required_info = fix_plan.get("required_info", [])
