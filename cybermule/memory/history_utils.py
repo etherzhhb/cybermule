@@ -57,3 +57,13 @@ def extract_chat_history(
             })
 
     return history
+
+def format_chat_history_as_text(messages: List[dict]) -> str:
+    lines = []
+    for msg in messages:
+        role = msg["role"]
+        content_chunks = msg["content"]
+        for chunk in content_chunks:
+            text = chunk.get("text", "")
+            lines.append(f"{role.upper()}: {text.strip()}")
+    return "\n\n".join(lines)
