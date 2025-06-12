@@ -2,7 +2,7 @@ import os
 import tempfile
 import pytest
 from cybermule.memory.memory_graph import MemoryGraph
-from cybermule.memory.history_utils import extract_chat_history
+from cybermule.memory.history_utils import extract_chat_history, format_chat_history_as_text
 
 @pytest.fixture
 def temp_graph_file():
@@ -130,3 +130,22 @@ def test_extract_chat_history_from_memory_graph(temp_graph_file):
     history_with_empty = extract_chat_history(empty_id, mg, include_root=True)
 
     assert len(history_with_empty) == 6  # Empty node adds nothing
+
+def test_format_chat_history_as_text_simple():
+    messages = [
+        {"role": "user", "content": [{"text": "What is 2+2?"}]},
+        {"role": "assistant", "content": [{"text": "4"}]},
+        {"role": "user", "content": [{"text": "Explain why."}]},
+        {"role": "assistant", "content": [{"text": "Because 2 plus 2 equals 4."}]},
+    ]
+
+    result = format_chat_history_as_text(messages)
+    assert "USER: What is 2+2?" in result
+    assert "ASSISTANT: 4" in result
+    assert "USER: Explain why." in result
+    assert "ASSISTANT: Because 2 plus 2 equals 4." in result
+
+    # Optional: check structure
+    lines = [line for line in result.strip().splitlines() if line.strip()]
+    assert lines[0].startswith("USER:")
+    assert lines[1].startswith("ASSISTANT:")
