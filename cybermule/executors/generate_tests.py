@@ -12,7 +12,8 @@ def generate_tests(
 
     local_graph = graph or MemoryGraph()
 
-    node_id = local_graph.new(f"Suggest tests", parent_id=parent_id)
+    node_id = local_graph.new(f"Suggest tests", parent_id=parent_id, 
+                              tags=["suggestion"])
 
     files = set(test['file'] for test in test_samples)
     all_existing_tests = "\n\n".join(Path(file).read_text() for file in files)
@@ -27,8 +28,7 @@ def generate_tests(
             "all_existing_tests": all_existing_tests,
             "hints": hints
         },
-        status="SUGGESTED",
-        tags=["suggestion"]
+        status="SUGGESTED"
     )
 
     return suggestions, node_id if graph else None
