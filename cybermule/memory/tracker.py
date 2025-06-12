@@ -15,7 +15,7 @@ def log_llm_task(
     prompt_template: str,
     prompt: str,
     response: str,
-    extra: Optional[Dict[str, Any]] = None,
+    **extra,
 ) -> None:
     """
     Log a full LLM task interaction to the memory graph with metadata.
@@ -35,7 +35,7 @@ def log_llm_task(
         response=response,
         prompt_template=prompt_template,
         cybermule_commit=version_info.get("git_commit"),
-        **(extra or {})
+        **extra
     )
 
 
@@ -74,13 +74,17 @@ def run_llm_task(
     history = extract_chat_history(graph.parent_id_of(node_id), memory=graph)
     response = llm.generate(prompt, history=history, respond_prefix=respond_prefix)
 
+    extra = extra or {}
+
     log_llm_task(
         graph=graph,
         node_id=node_id,
         prompt_template=prompt_template,
         prompt=prompt,
         response=response,
-        extra={**(extra or {}), "status": status, "tags": tags or []},
+        status=status,
+        tags=tags,
+        **extra,
     )
 
     return response

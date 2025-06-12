@@ -163,3 +163,55 @@ def test_run_llm_task_chain_lineage(
     assert node["step"] == 2
     assert node["prompt"].startswith("Hello, Followup")
     assert "Response to:" in node["response"]
+
+def test_run_llm_task_defaults(
+    patch_prompt_path, fake_llm, patch_version_info
+):
+    graph = MemoryGraph()
+    node_id = graph.new("No extras")
+
+    response = run_llm_task(
+        config={},
+        graph=graph,
+        node_id=node_id,
+        prompt_template="test_prompt.j2",
+        variables={"name": "Bare"},
+    )
+
+    node = graph.get(node_id)
+
+    assert node["prompt"] == "Hello, Bare!"
+    assert node["response"] == response
+    assert node["status"] == "COMPLETED"
+    assert "custom_meta" not in node
+    assert not node['tags']
+
+def test_run_llm_task_render_error(monkeypatch, tmp_path, patch_version_info):
+    bad_prompt = tmp_path / "bad_prompt.j2"
+    bad_prompt.write_text("{{ undefined_var | upper }} {{")  # malformed
+
+    monkeypatch.setattr(
+        "cybermule.memory.tracker.get_prompt_path",
+        lambda cfg, name: bad_prompt
+    )
+
+    class DummyLLM:
+        def generate(self, prompt, history=None, respond_prefix=None):
+            return "should not run"
+
+    monkeypatch.setattr(
+        "cybermule.memory.tracker.get_llm_provider",
+        lambda cfg: DummyLLM()
+    )
+
+    graph = MemoryGraph()
+    node_id = graph.new("Broken")
+
+    with pytest.raises(Exception):
+        run_llm_task(
+            config={},
+            graph=graph,
+            node_id=node_id,
+            prompt_template="bad_prompt.j2",
+            variables={"irrelevant": "value"}
+        )
