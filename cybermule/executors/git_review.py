@@ -33,7 +33,8 @@ def review_commit_with_llm(
     local_graph = graph or MemoryGraph()
 
     # Create a memory node for traceability
-    node_id = local_graph.new(f"Review commit {commit_sha[:7]}", parent_id=parent_id, tags=["review"])
+    node_id = local_graph.new(f"Review commit {commit_sha[:7]}", parent_id=parent_id, 
+                              tags=["review"])
 
     review = run_llm_task(
         config=config,
