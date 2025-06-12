@@ -40,6 +40,10 @@ def replay_subtree(root_node_id, graph, config, prompt_substitutions=None, tag="
             mode="REPLAY"
         )
 
+        extra_data = {"replay_of": original_id}
+        if new_prompt != original_prompt:
+            extra_data["prompt_variant_of"] = original_prompt
+
         _ = run_llm_task(
             config=config,
             graph=graph,
@@ -48,10 +52,7 @@ def replay_subtree(root_node_id, graph, config, prompt_substitutions=None, tag="
             variables=variables,
             status="COMPLETED",
             tags=[tag],
-            extra={
-                "replay_of": original_id,
-                "prompt_variant_of": original_prompt if new_prompt != original_prompt else None
-            }
+            extra=extra_data
         )
 
         node_id_map[original_id] = new_node_id
