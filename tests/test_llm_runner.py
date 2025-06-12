@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from cybermule.memory.memory_graph import MemoryGraph
-from cybermule.memory.tracker import run_llm_and_store, run_llm_task
+from cybermule.executors.llm_runner import run_llm_and_store, run_llm_task
 
 
 # ─── Fixtures and Mocks ─────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ def fake_prompt_file(tmp_path):
 def patch_prompt_path(monkeypatch, fake_prompt_file):
     """Patch get_prompt_path to return the fake prompt"""
     monkeypatch.setattr(
-        "cybermule.memory.tracker.get_prompt_path",
+        "cybermule.executors.llm_runner.get_prompt_path",
         lambda config, name: Path(fake_prompt_file)
     )
 
@@ -29,7 +29,7 @@ def fake_llm(monkeypatch):
             return f"Response to: {prompt}"
 
     monkeypatch.setattr(
-        "cybermule.memory.tracker.get_llm_provider",
+        "cybermule.executors.llm_runner.get_llm_provider",
         lambda config: DummyLLM()
     )
 
@@ -80,7 +80,7 @@ def test_run_llm_task_with_history(
 
     # Patch extract_chat_history to return mock
     monkeypatch.setattr(
-        "cybermule.memory.tracker.extract_chat_history",
+        "cybermule.executors.llm_runner.extract_chat_history",
         lambda parent_id, memory: mock_history
     )
 
@@ -91,7 +91,7 @@ def test_run_llm_task_with_history(
             return f"Prompt: {prompt} | History: {history_snippet}"
 
     monkeypatch.setattr(
-        "cybermule.memory.tracker.get_llm_provider",
+        "cybermule.executors.llm_runner.get_llm_provider",
         lambda config: HistoryEchoLLM()
     )
 
@@ -124,7 +124,7 @@ def test_run_llm_task_with_respond_prefix(
             captured["prefix"] = respond_prefix
             return "Some response"
 
-    monkeypatch.setattr("cybermule.memory.tracker.get_llm_provider", lambda cfg: DummyLLM())
+    monkeypatch.setattr("cybermule.executors.llm_runner.get_llm_provider", lambda cfg: DummyLLM())
 
     graph = MemoryGraph()
     node_id = graph.new("Test prefix", tags=["prefix"])
@@ -191,7 +191,7 @@ def test_run_llm_task_render_error(monkeypatch, tmp_path, patch_version_info):
     bad_prompt.write_text("{{ undefined_var | upper }} {{")  # malformed
 
     monkeypatch.setattr(
-        "cybermule.memory.tracker.get_prompt_path",
+        "cybermule.executors.llm_runner.get_prompt_path",
         lambda cfg, name: bad_prompt
     )
 
@@ -200,7 +200,7 @@ def test_run_llm_task_render_error(monkeypatch, tmp_path, patch_version_info):
             return "should not run"
 
     monkeypatch.setattr(
-        "cybermule.memory.tracker.get_llm_provider",
+        "cybermule.executors.llm_runner.get_llm_provider",
         lambda cfg: DummyLLM()
     )
 

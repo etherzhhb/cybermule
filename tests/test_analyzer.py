@@ -15,9 +15,9 @@ def mock_config():
         "prompt_dir": "/dev/null"  # Not used due to patching
     }
 
-@patch("cybermule.memory.tracker.get_llm_provider")
-@patch("cybermule.memory.tracker.get_prompt_path")
-@patch("cybermule.memory.tracker.render_template")
+@patch("cybermule.executors.llm_runner.get_llm_provider")
+@patch("cybermule.executors.llm_runner.get_prompt_path")
+@patch("cybermule.executors.llm_runner.render_template")
 def test_analyze_failure_with_llm_mocked(
     mock_render_template,
     mock_get_prompt_path,
@@ -59,9 +59,9 @@ some error happened
 
 # === summarize_traceback ===
 
-@patch("cybermule.memory.tracker.get_llm_provider")
-@patch("cybermule.memory.tracker.get_prompt_path")
-@patch("cybermule.memory.tracker.render_template")
+@patch("cybermule.executors.llm_runner.get_llm_provider")
+@patch("cybermule.executors.llm_runner.get_prompt_path")
+@patch("cybermule.executors.llm_runner.render_template")
 def test_summarize_traceback_mocked(
     mock_render_template,
     mock_get_prompt_path,
@@ -83,9 +83,9 @@ def test_summarize_traceback_mocked(
     assert "line" in summary
     assert "missing argument" in summary
 
-@patch("cybermule.memory.tracker.get_llm_provider")
-@patch("cybermule.memory.tracker.get_prompt_path")
-@patch("cybermule.memory.tracker.render_template")
+@patch("cybermule.executors.llm_runner.get_llm_provider")
+@patch("cybermule.executors.llm_runner.get_prompt_path")
+@patch("cybermule.executors.llm_runner.render_template")
 def test_fix_plan_with_context_request(
     mock_render_template,
     mock_get_prompt_path,
@@ -152,9 +152,9 @@ def test_fix_plan_with_context_request(
     assert fix["edits"][0]["symbol"] == "helper"
 
 
-@patch("cybermule.memory.tracker.get_llm_provider")
-@patch("cybermule.memory.tracker.get_prompt_path")
-@patch("cybermule.memory.tracker.render_template")
+@patch("cybermule.executors.llm_runner.get_llm_provider")
+@patch("cybermule.executors.llm_runner.get_prompt_path")
+@patch("cybermule.executors.llm_runner.render_template")
 def test_fix_plan_multi_round_retry(
     mock_render_template,
     mock_get_prompt_path,
@@ -253,9 +253,9 @@ def test_fulfill_context_requests_lineno_handling(lineno_value, expected):
             assert results[0]["traceback_line"] == expected
 
 
-@patch("cybermule.memory.tracker.get_llm_provider")
-@patch("cybermule.memory.tracker.get_prompt_path")
-@patch("cybermule.memory.tracker.render_template")
+@patch("cybermule.executors.llm_runner.get_llm_provider")
+@patch("cybermule.executors.llm_runner.get_prompt_path")
+@patch("cybermule.executors.llm_runner.render_template")
 def test_fix_plan_max_rounds_exceeded(
     mock_render_template,
     mock_get_prompt_path,

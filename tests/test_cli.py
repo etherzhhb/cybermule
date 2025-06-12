@@ -25,13 +25,13 @@ def test_run_and_fix_with_mock_llm(tmp_path):
             "cybermule.commands.run_and_fix.get_first_failure",
             return_value=("test_func", traceback_sample),
         ),
-        patch("cybermule.memory.tracker.get_llm_provider") as mock_get_llm,
+        patch("cybermule.executors.llm_runner.get_llm_provider") as mock_get_llm,
         patch(
-            "cybermule.memory.tracker.get_prompt_path",
+            "cybermule.executors.llm_runner.get_prompt_path",
             return_value="dummy_template.j2",
         ),
         patch(
-            "cybermule.memory.tracker.render_template",
+            "cybermule.executors.llm_runner.render_template",
             return_value="rendered prompt",
         ),
     ):
@@ -77,9 +77,9 @@ def test_run_and_fix_with_multi_edit_plan(tmp_path):
         patch("cybermule.executors.apply_code_change.apply_with_aider", return_value=True),
         patch("cybermule.commands.run_and_fix.run_test", return_value={"failure_count": 1, "tracebacks": {"test_func": "mock traceback"}}),
         patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_func", "mock traceback")),
-        patch("cybermule.memory.tracker.get_llm_provider") as mock_get_llm,
-        patch("cybermule.memory.tracker.get_prompt_path", return_value="dummy.j2"),
-        patch("cybermule.memory.tracker.render_template", return_value="rendered"),
+        patch("cybermule.executors.llm_runner.get_llm_provider") as mock_get_llm,
+        patch("cybermule.executors.llm_runner.get_prompt_path", return_value="dummy.j2"),
+        patch("cybermule.executors.llm_runner.render_template", return_value="rendered"),
     ):
         mock_llm = MagicMock()
         mock_llm.generate.return_value = f"<error_summary>some error</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
@@ -108,9 +108,9 @@ def test_run_and_fix_with_test_selection(tmp_path):
     with (
         patch("cybermule.commands.run_and_fix.run_single_test", return_value={"failure_count": 1, "tracebacks": {"test_selected": "sample traceback"}}),
         patch("cybermule.commands.run_and_fix.get_first_failure", return_value=("test_selected", "sample traceback")),
-        patch("cybermule.memory.tracker.get_llm_provider") as mock_get_llm,
-        patch("cybermule.memory.tracker.get_prompt_path", return_value="dummy.j2"),
-        patch("cybermule.memory.tracker.render_template", return_value="rendered"),
+        patch("cybermule.executors.llm_runner.get_llm_provider") as mock_get_llm,
+        patch("cybermule.executors.llm_runner.get_prompt_path", return_value="dummy.j2"),
+        patch("cybermule.executors.llm_runner.render_template", return_value="rendered"),
     ):
         mock_llm = MagicMock()
         mock_llm.generate.return_value = f"<error_summary>some error</error_summary>\n```json\n{json.dumps(fix_plan, indent=2)}\n```"
@@ -131,7 +131,7 @@ def test_run_and_fix_smoke_review_commit(monkeypatch):
         patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="abcdef1"),
         patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Fix bug"),
         patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/x.py b/x.py"),
-        patch("cybermule.memory.tracker.get_llm_provider") as mock_analyzer_llm,
+        patch("cybermule.executors.llm_runner.get_llm_provider") as mock_analyzer_llm,
         patch("cybermule.commands.run_and_fix.run_test", return_value=(1, "Traceback (most recent call last)...\nAssertionError")),
         patch("cybermule.tools.test_runner.get_first_failure", return_value="tests/test_x.py::test_fail"),
     ):
@@ -157,7 +157,7 @@ def test_review_commit_smoke(monkeypatch):
         patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="deadbeef"),
         patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Add new endpoint"),
         patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/api.py b/api.py"),
-        patch("cybermule.memory.tracker.get_llm_provider") as mock_llm,
+        patch("cybermule.executors.llm_runner.get_llm_provider") as mock_llm,
     ):
         mock_llm.return_value.generate.return_value = "This looks good overall."
 
@@ -184,9 +184,9 @@ def test_suggest_test_smoke(tmp_path):
         patch("cybermule.executors.git_review.git_utils.get_latest_commit_sha", return_value="abc123"),
         patch("cybermule.executors.git_review.git_utils.get_commit_message_by_sha", return_value="Add feature"),
         patch("cybermule.executors.git_review.git_utils.get_commit_diff_by_sha", return_value="diff --git a/feature.py b/feature.py"),
-        patch("cybermule.memory.tracker.get_llm_provider") as mock_llm_provider,
-        patch("cybermule.memory.tracker.get_prompt_path", return_value="dummy.j2"),
-        patch("cybermule.memory.tracker.render_template", return_value="rendered"),
+        patch("cybermule.executors.llm_runner.get_llm_provider") as mock_llm_provider,
+        patch("cybermule.executors.llm_runner.get_prompt_path", return_value="dummy.j2"),
+        patch("cybermule.executors.llm_runner.render_template", return_value="rendered"),
     ):
         mock_llm_provider.return_value.generate.return_value = "def test_new_feature():\n    assert new_feature() == expected_result"
         result = runner.invoke(app, [
