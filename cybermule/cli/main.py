@@ -9,6 +9,7 @@ from cybermule.commands import (
     review_commit,
     run_and_fix,
     suggest_test,
+    replay_subtree,
 )
 from cybermule.version_info import get_version_info
 
@@ -66,6 +67,7 @@ def main(
 app.command("review-commit")(review_commit.run)
 app.command("run-and-fix")(run_and_fix.run)
 app.command("suggest-test")(suggest_test.run)
+app.command("replay-subtree")(replay_subtree.run)
 
 
 # Lazily import check-llm command
