@@ -201,3 +201,16 @@ def test_suggest_test_smoke(tmp_path):
         assert result.exit_code == 0
         assert "Reviewing commit" in result.output
         assert "Generating additional tests" in result.output
+
+def test_version_info_displayed():
+    from cybermule.version_info import get_version_info
+
+    version_info = get_version_info()
+    expected_commit = version_info["git_commit"]
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["check-llm"], catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert f"Cybermule v" in result.output
+    assert expected_commit in result.output

@@ -13,3 +13,4 @@ memory_graph.json
 .DS_Store
 venv/
 .ctags
+cybermule/_version.py

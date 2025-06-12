@@ -10,6 +10,7 @@ from cybermule.commands import (
     run_and_fix,
     suggest_test,
 )
+from cybermule.version_info import get_version_info
 
 app = typer.Typer()
 
@@ -54,6 +55,10 @@ def main(
 
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
+
+    # ⬇️ Display version + commit hash
+    version_info = get_version_info()
+    typer.echo(f"🤖 Cybermule v{version_info['version']} (commit {version_info['git_commit']})")
 
     ctx.obj = {"config": config}
 
