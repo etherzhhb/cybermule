@@ -1,10 +1,20 @@
+# Core dependencies
 typer[all]
 networkx
+jinja2
+
+# LLM and embedding support
 litellm
 langchain
 faiss-cpu
-pyyaml
-markdown-it-py
-jinja2
+
+# Optional AST tools
 tree-sitter
 tree-sitter-python
+
+# YAML + Markdown parsing
+pyyaml
+markdown-it-py
+
+# Build tools (only for dev)
+setuptools>=61  # Include only in requirements-dev.txt
