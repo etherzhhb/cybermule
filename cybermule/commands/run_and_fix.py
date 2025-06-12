@@ -57,7 +57,7 @@ def run(
     typer.echo(f"🧾 Fix description: {fix_description}")
 
     if  dry_run:
-        typer.echo("🎯 Dry run, not applying tests")
+        typer.echo("🎯 Dry run, not applying change")
         return
 
     apply_code_change(description=fix_description,
