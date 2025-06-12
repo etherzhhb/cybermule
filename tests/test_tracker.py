@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from cybermule.memory.memory_graph import MemoryGraph
-from cybermule.memory.tracker import run_llm_task
+from cybermule.memory.tracker import run_llm_and_store, run_llm_task
 
 
 # ─── Fixtures and Mocks ─────────────────────────────────────────────────────────
@@ -215,3 +215,29 @@ def test_run_llm_task_render_error(monkeypatch, tmp_path, patch_version_info):
             prompt_template="bad_prompt.j2",
             variables={"irrelevant": "value"}
         )
+
+def test_run_llm_and_store_basic(
+    patch_prompt_path, fake_llm, patch_version_info
+):
+    graph = MemoryGraph()
+    node_id = graph.new("Test store", tags=["unit"])
+
+    response, metadata = run_llm_and_store(
+        config={},
+        graph=graph,
+        node_id=node_id,
+        prompt_template="test_prompt.j2",
+        variables={"name": "Cybermule"},
+        status="STORE_TEST",
+        postprocess=lambda r: {"parsed_result": r.upper()}
+    )
+
+    node = graph.get(node_id)
+
+    # ✅ Check response passthrough
+    assert response == "Response to: Hello, Cybermule!"
+
+    # ✅ Check postprocess result is stored
+    assert metadata == {"parsed_result": "RESPONSE TO: HELLO, CYBERMULE!"}
+    assert node["parsed_result"] == metadata["parsed_result"]
+    assert node["status"] == "STORE_TEST"
