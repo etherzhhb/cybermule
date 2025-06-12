@@ -113,7 +113,7 @@ def llm_run(
     *,
     config: dict,
     graph: MemoryGraph,
-    title: str,
+    task: str,
     prompt_template: str,
     variables: dict,
     parent_id: Optional[str] = None,
@@ -131,7 +131,7 @@ def llm_run(
     """
     local_graph = graph or MemoryGraph()
 
-    node_id = local_graph.new(title, parent_id=parent_id, tags=tags or [])
+    node_id = local_graph.new(task=task, parent_id=parent_id, tags=tags or [])
     response = run_llm_task(
         config=config,
         graph=local_graph,
@@ -150,7 +150,7 @@ def llm_run_and_store(
     *,
     config: dict,
     graph: MemoryGraph,
-    title: str,
+    task: str,
     prompt_template: str,
     variables: dict,
     postprocess: Callable[[str], Dict[str, Any]],
@@ -169,7 +169,7 @@ def llm_run_and_store(
     """
     local_graph = graph or MemoryGraph()
 
-    node_id = local_graph.new(title, parent_id=parent_id, tags=tags or [])
+    node_id = local_graph.new(task=task, parent_id=parent_id, tags=tags or [])
     response, metadata = run_llm_and_store(
         config=config,
         graph=local_graph,
