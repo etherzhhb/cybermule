@@ -72,3 +72,94 @@ def test_run_llm_task_basic(
     assert node["cybermule_commit"] == "abc123"
     assert node["status"] == "DONE"
     assert node["custom_meta"] == "ok"
+
+def test_run_llm_task_with_history(
+    patch_prompt_path, patch_version_info, monkeypatch
+):
+    mock_history = [{"role": "assistant", "content": "Earlier step"}]
+
+    # Patch extract_chat_history to return mock
+    monkeypatch.setattr(
+        "cybermule.memory.tracker.extract_chat_history",
+        lambda parent_id, memory: mock_history
+    )
+
+    # Use an LLM that returns history content in response
+    class HistoryEchoLLM:
+        def generate(self, prompt, history=None, respond_prefix=None):
+            history_snippet = history[0]["content"] if history else "NO_HISTORY"
+            return f"Prompt: {prompt} | History: {history_snippet}"
+
+    monkeypatch.setattr(
+        "cybermule.memory.tracker.get_llm_provider",
+        lambda config: HistoryEchoLLM()
+    )
+
+    graph = MemoryGraph()
+    parent_id = graph.new("Parent node", tags=["trace"])
+    graph.update(parent_id, prompt="prompt", response="Earlier step")
+
+    node_id = graph.new("Child node", tags=["test"], parent_id=parent_id)
+
+    response = run_llm_task(
+        config={},
+        graph=graph,
+        node_id=node_id,
+        prompt_template="test_prompt.j2",
+        variables={"name": "Cybermule"},
+    )
+
+    # ✅ Check that history made it into LLM response
+    assert "Earlier step" in response
+
+
+def test_run_llm_task_with_respond_prefix(
+    patch_prompt_path, patch_version_info, monkeypatch
+):
+    # Capture passed respond_prefix
+    captured = {}
+
+    class DummyLLM:
+        def generate(self, prompt, history=None, respond_prefix=None):
+            captured["prefix"] = respond_prefix
+            return "Some response"
+
+    monkeypatch.setattr("cybermule.memory.tracker.get_llm_provider", lambda cfg: DummyLLM())
+
+    graph = MemoryGraph()
+    node_id = graph.new("Test prefix", tags=["prefix"])
+
+    run_llm_task(
+        config={},
+        graph=graph,
+        node_id=node_id,
+        prompt_template="test_prompt.j2",
+        variables={"name": "Test"},
+        respond_prefix="OUTPUT:\n"
+    )
+
+    assert captured["prefix"] == "OUTPUT:\n"
+
+def test_run_llm_task_chain_lineage(
+    patch_prompt_path, fake_llm, patch_version_info
+):
+    graph = MemoryGraph()
+    root_id = graph.new("Root reasoning step", tags=["chain"])
+    next_id = graph.new("Step 2", tags=["chain"], parent_id=root_id,)
+
+    # Perform task as child of root
+    response = run_llm_task(
+        config={},
+        graph=graph,
+        node_id=next_id,
+        prompt_template="test_prompt.j2",
+        variables={"name": "Followup"},
+        status="CHAINED",
+        extra={"step": 2}
+    )
+
+    node = graph.get(next_id)
+    assert node["status"] == "CHAINED"
+    assert node["step"] == 2
+    assert node["prompt"].startswith("Hello, Followup")
+    assert "Response to:" in node["response"]

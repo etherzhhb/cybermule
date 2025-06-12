@@ -62,6 +62,10 @@ class MemoryGraph:
     def parent_of(self, node_id):
         preds = list(self.graph.predecessors(node_id))
         return self.get(preds[0]) if preds else None
+    
+    def parent_id_of(self, node_id):
+        parent_node = self.parent_of(node_id)
+        return parent_node['id'] if parent_node else None
 
     def get_descendants(self, node_id):
         return [self.get(nid) for nid in get_descendants(self.graph, node_id)]
