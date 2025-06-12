@@ -7,8 +7,6 @@ import yaml
 
 from cybermule.commands import (
     review_commit,
-    history,
-    filter,
     run_and_fix,
     suggest_test,
 )
@@ -61,8 +59,6 @@ def main(
 
 
 app.command("review-commit")(review_commit.run)
-app.command("history")(history.run)
-app.command("filter")(filter.run)
 app.command("run-and-fix")(run_and_fix.run)
 app.command("suggest-test")(suggest_test.run)
 
