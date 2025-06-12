@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional, List
 
-from cybermule.memory.tracker import run_llm_task
-from cybermule.providers.llm_provider import get_llm_provider
+from cybermule.memory.tracker import run_llm_and_store
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.symbol_resolution import (
     resolve_symbol,
@@ -32,22 +31,18 @@ def summarize_traceback(
     local_graph = graph or MemoryGraph()
     node_id = local_graph.new("Summarize traceback", parent_id=parent_id, tags=["traceback"])
 
-    summary = run_llm_task(
+    _, metadata = run_llm_and_store(
         config=config,
         graph=local_graph,
         node_id=node_id,
         prompt_template="summarize_traceback.j2",
         variables={"TRACEBACK": traceback},
-        status="SUMMARIZED")
+        status="SUMMARIZED",
+        postprocess=lambda r: {
+            "error_summary": extract_tagged_blocks(r, tag="error_summary")[0]
+        })
 
-    try:
-        error_summary, = extract_tagged_blocks(summary, tag="error_summary")
-    except ValueError:
-        raise RuntimeError("LLM didnt respond with error_summary")
-
-    local_graph.update(node_id, error_summary=error_summary)
-
-    return error_summary, node_id if graph else None
+    return metadata['error_summary'], node_id if graph else None
 
 
 def fulfill_context_requests(required_info: List[Dict], project_root: Path) -> List[Dict]:
@@ -132,7 +127,7 @@ def generate_fix_from_summary(
     fix_plan = {}
 
     for round_num in range(max_rounds):
-        response = run_llm_task(
+        _, metadata = run_llm_and_store(
             config=config,
             graph=graph,
             node_id=node_id,
@@ -142,9 +137,12 @@ def generate_fix_from_summary(
                 "CODE_CONTEXTS": current_contexts
             },
             status=f"FIX_ATTEMPT_{round_num + 1}",
+            postprocess=lambda r: {
+                "fix_plan": extract_first_json_block(r)
+            }
         )
 
-        fix_plan = extract_first_json_block(response)
+        fix_plan = metadata["fix_plan"]
 
         # Log current reasoning step
         graph.update(node_id, fix_plan=fix_plan)
@@ -153,7 +151,7 @@ def generate_fix_from_summary(
         required_info = fix_plan.get("required_info", [])
 
         if not needs_more or not required_info:
-            graph.update(node_id, status="FIX_FINALIZED", fix_plan=fix_plan)
+            graph.update(node_id, status="FIX_FINALIZED")
             return fix_plan, node_id
 
         # Fulfill LLM's request for more symbol context
