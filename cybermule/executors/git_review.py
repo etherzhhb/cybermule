@@ -34,7 +34,7 @@ def review_commit_with_llm(
     review, node_id = llm_run(
         config=config,
         graph=graph,
-        title=f"Review commit {commit_sha[:7]}",
+        task=f"Review commit {commit_sha[:7]}",
         parent_id=parent_id, 
         tags=["review"],
         prompt_template="review_git_commit.j2",

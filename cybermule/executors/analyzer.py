@@ -32,7 +32,7 @@ def summarize_traceback(
     _, node_id, metadata = llm_run_and_store(
         config=config,
         graph=graph,
-        title="Summarize traceback",
+        task="Summarize traceback",
         parent_id=parent_id,
         tags=["traceback"],
         prompt_template="summarize_traceback.j2",

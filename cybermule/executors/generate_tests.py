@@ -16,7 +16,7 @@ def generate_tests(
     suggestions, node_id = llm_run(
         config=config,
         graph=graph,
-        title=f"Suggest tests",
+        task=f"Suggest tests",
         parent_id=parent_id, 
         tags=["suggestion"],
         prompt_template="suggest_test_cases.j2",
