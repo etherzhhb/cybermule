@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from cybermule.memory.tracker import run_llm_task
+from cybermule.executors.llm_runner import llm_run
 from cybermule.utils import git_utils
 from cybermule.memory.memory_graph import MemoryGraph
 
@@ -30,16 +30,13 @@ def review_commit_with_llm(
     commit_msg = git_utils.get_commit_message_by_sha(commit_sha)
     commit_diff = git_utils.get_commit_diff_by_sha(commit_sha)
     
-    local_graph = graph or MemoryGraph()
 
-    # Create a memory node for traceability
-    node_id = local_graph.new(f"Review commit {commit_sha[:7]}", parent_id=parent_id, 
-                              tags=["review"])
-
-    review = run_llm_task(
+    review, node_id = llm_run(
         config=config,
-        graph=local_graph,
-        node_id=node_id,
+        graph=graph,
+        title=f"Review commit {commit_sha[:7]}",
+        parent_id=parent_id, 
+        tags=["review"],
         prompt_template="review_git_commit.j2",
         variables={
             "commit_message": commit_msg,
@@ -49,4 +46,4 @@ def review_commit_with_llm(
         extra={"commit_sha": commit_sha}
     )
 
-    return review, node_id if graph else None
+    return review, node_id

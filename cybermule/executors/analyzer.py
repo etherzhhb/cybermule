@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional, List
 
-from cybermule.memory.tracker import run_llm_and_store
+from cybermule.executors.llm_runner import llm_run_and_store, run_llm_and_store
 from cybermule.memory.memory_graph import MemoryGraph
 from cybermule.symbol_resolution import (
     resolve_symbol,
@@ -28,13 +28,13 @@ def summarize_traceback(
     Returns:
         (summary: str, node_id: Optional[str])
     """
-    local_graph = graph or MemoryGraph()
-    node_id = local_graph.new("Summarize traceback", parent_id=parent_id, tags=["traceback"])
 
-    _, metadata = run_llm_and_store(
+    _, node_id, metadata = llm_run_and_store(
         config=config,
-        graph=local_graph,
-        node_id=node_id,
+        graph=graph,
+        title="Summarize traceback",
+        parent_id=parent_id,
+        tags=["traceback"],
         prompt_template="summarize_traceback.j2",
         variables={"TRACEBACK": traceback},
         status="SUMMARIZED",
@@ -42,7 +42,7 @@ def summarize_traceback(
             "error_summary": extract_tagged_blocks(r, tag="error_summary")[0]
         })
 
-    return metadata['error_summary'], node_id if graph else None
+    return metadata['error_summary'], node_id
 
 
 def fulfill_context_requests(required_info: List[Dict], project_root: Path) -> List[Dict]:
