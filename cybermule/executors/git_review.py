@@ -51,6 +51,7 @@ def review_commit_with_llm(
     review = llm.generate(prompt, history=history)
 
     # Log to graph
-    local_graph.update(node_id, prompt=prompt, response=review, status="REVIEWED")
+    local_graph.update(node_id, prompt=prompt, response=review, 
+                       commit_sha=commit_sha, status="REVIEWED")
 
     return review, node_id if graph else None
